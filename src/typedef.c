@@ -148,6 +148,17 @@ Matrix* matrix_create(int row, int col) {
     return matrix;
 }
 
+ParMatrix* create_output_matrix(ParMatrix* input) {
+    ParMatrix* output = (ParMatrix*) malloc(sizeof(ParMatrix));
+    output->gm = input->gm;
+    output->gn = input->gn;
+    output->inPart = input->inPart;
+    output->l2gMap = input->l2gMap;
+    output->store = input->store;
+    output->mat = matrix_create(input->mat->m, input->mat->n);
+    return output;
+}
+
 void matrix_free(Matrix *m) {
     free(m->entries[0]);
     free(m->entries);

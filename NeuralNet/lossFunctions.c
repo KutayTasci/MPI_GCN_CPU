@@ -46,3 +46,26 @@ void crossEntropy(Matrix *y, Matrix *y_hat) {
         exit(1);
     }
 }
+
+void l2Loss(Matrix *y, Matrix *y_hat) {
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    if ((y->m == y_hat->m) && (y->n == y_hat->n)) {
+        double total= 0;
+        for (int i = 0; i < y->m; i++) {
+           for (int j = 0; j < y_hat->n; j++) {
+                total += pow(y->entries[i][j] - y_hat->entries[i][j], 2);
+            }
+        }
+        double global_total;
+        MPI_Reduce(&total, &global_total, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        if (world_rank == 0) {
+            printf("L2 Loss %lf\n", global_total);
+        }
+    } else {
+        printf("Dimension mistmatch l2 loss: %dx%d %dx%d\n", y->m, y->n, y_hat->m, y_hat->n);
+        exit(1);
+    }
+}
+

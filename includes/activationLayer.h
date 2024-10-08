@@ -8,7 +8,8 @@ enum activation_type {
     SIGMOID,
     TANH,
     RELU,
-    SOFTMAX
+    SOFTMAX,
+    LEAKY_RELU
 };
 
 typedef struct {
@@ -22,5 +23,6 @@ activationLayer* activation_init(enum activation_type type);
 void activation_forward(activationLayer* layer);
 Matrix* activation_backward(activationLayer* layer, Matrix* error, double lr);
 void activation_free(activationLayer* layer);
+void set_leaky_relu_alpha(double alpha);
 
 #endif // ACTIVATIONLAYER_H_INCLUDED

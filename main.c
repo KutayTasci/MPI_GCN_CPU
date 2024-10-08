@@ -126,12 +126,12 @@ int main(int argc, char** argv) {
 
 	
     layer_super* gcn_1 = layer_init_gcn(A, A_T,X->gn, Y->gn);
-    //layer_super* act_1 = layer_init_activation(RELU);
-    //layer_super* gcn_2 = layer_init_gcn(A, A_T,hidden_p, Y->gn);
+    layer_super* act_1 = layer_init_activation(RELU);
+    layer_super* gcn_2 = layer_init_gcn(A, A_T,hidden_p, Y->gn);
 
     net_addLayer(net, gcn_1);
-    //net_addLayer(net, act_1);
-    //net_addLayer(net, gcn_2);
+    net_addLayer(net, act_1);
+    net_addLayer(net, gcn_2);
 	
 	//for memory opt
     if (atoi(argv[2]) != 0) {
@@ -196,10 +196,11 @@ int main(int argc, char** argv) {
     }
     
 	if (atoi(argv[2]) == 1) {
-		Matrix* temp = matrix_create(gcn_1->gcn_layer->size_n, gcn_1->gcn_layer->size_f);
+        gcnLayer *gcn_1l = (gcnLayer *) gcn_1->layer;
+		Matrix* temp = matrix_create(gcn_1l->size_n, gcn_1l->size_f);
 		MPI_Barrier(MPI_COMM_WORLD);
     	t1 = MPI_Wtime();
-		aggregate_no_comm(gcn_1->gcn_layer, X->mat, temp, 101);
+		aggregate_no_comm(gcn_1l, X->mat, temp, 101);
 		MPI_Barrier(MPI_COMM_WORLD);
         t2 = MPI_Wtime();
         if (world_rank == 0) {
@@ -207,7 +208,7 @@ int main(int argc, char** argv) {
         }
         MPI_Barrier(MPI_COMM_WORLD);
     	t1 = MPI_Wtime();
-		aggregate_no_comp(gcn_1->gcn_layer, X->mat, temp, 101);
+		aggregate_no_comp(gcn_1l, X->mat, temp, 101);
 		MPI_Barrier(MPI_COMM_WORLD);
         t2 = MPI_Wtime();
         if (world_rank == 0) {

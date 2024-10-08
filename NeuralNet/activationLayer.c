@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include "../includes/matrix.h"
 //Local function
-
 void apply(double (*func)(double), activationLayer* layer) {
     for (int i = 0; i < layer->input->mat->m; i++) {
         for (int j = 0; j < layer->input->mat->n; j++) {
@@ -17,6 +16,28 @@ void apply_mat(double (*func)(double), Matrix* mat) {
         for (int j = 0; j < mat->n; j++) {
             mat->entries[i][j] = (*func)(mat->entries[i][j]);
         }
+    }
+}
+
+double LRelu_alpha = 0.01;
+
+void set_leaky_relu_alpha(double alpha) {
+    LRelu_alpha = alpha;
+}
+
+double leaky_relu(double input) {
+    if (input > 0) {
+        return input;
+    } else {
+        return LRelu_alpha * input;
+    }
+}
+
+double leaky_relu_prime(double input) {
+    if (input > 0) {
+        return 1;
+    } else {
+        return LRelu_alpha;
     }
 }
 
@@ -74,7 +95,7 @@ Matrix* tanhPrime(Matrix* mat) {
     return out;
 }
 
-activationLayer* activation_init(enum activation_type type) {
+activationLayer* activation_init(enum activation_type type) { // KUTAY
     activationLayer* layer = malloc(sizeof(activationLayer));
     layer->type = type;
     layer->init = false;
@@ -83,13 +104,8 @@ activationLayer* activation_init(enum activation_type type) {
 
 void activation_forward(activationLayer* layer) {
     if (!layer->init) {
-        layer->output = (ParMatrix*) malloc(sizeof(ParMatrix));
-        layer->output->gm = layer->input->gm;
-        layer->output->gn = layer->input->gn;
-        layer->output->inPart = layer->input->inPart;
-        layer->output->l2gMap = layer->input->l2gMap;
-        layer->output->store = layer->input->store;
-        layer->output->mat = matrix_create(layer->input->mat->m, layer->input->mat->n);
+        layer->output = create_output_matrix(layer->input);
+        layer->init = true;
     }
 
     if (layer->type == SIGMOID) {
@@ -98,9 +114,14 @@ void activation_forward(activationLayer* layer) {
         apply(tanh_ops, layer);
     } else if (layer->type == RELU) {
         apply(relu, layer);
+    } else if (layer->type == LEAKY_RELU) {
+        apply(leaky_relu, layer);
+    } else {
+        exit(1);
     }
 }
 
+// todo: remove input_error, out_error and do the calculation in place
 Matrix* activation_backward(activationLayer* layer, Matrix* error, double lr) {
     Matrix* input_error;
     Matrix* out_error = matrix_create(layer->input->mat->m, layer->input->mat->n);
@@ -112,6 +133,10 @@ Matrix* activation_backward(activationLayer* layer, Matrix* error, double lr) {
         //matrix_scale(lr, input_error);
     } else if (layer->type == RELU) {
         input_error = reluPrime(layer->input->mat);
+        //matrix_scale(lr, input_error);
+    } else if (layer->type == LEAKY_RELU) {
+        input_error = matrix_create(layer->input->mat->m, layer->input->mat->n);
+        apply_mat(leaky_relu_prime, layer->input->mat);
         //matrix_scale(lr, input_error);
     } else {
         exit(1);
@@ -128,3 +153,4 @@ void activation_free(activationLayer* layer) {
 
     free(layer);
 }
+

@@ -22,16 +22,19 @@ layer_super* layer_init(enum layer_type type) {
 
 layer_super* layer_init_activation(enum activation_type type) {
     layer_super* layer = layer_init(ACTIVATION);
-    layer->activation_layer = activation_init(type);
-    layer->gcn_layer = NULL;
+    layer->layer = activation_init(type);
+    return layer;
+}
+
+layer_super* layer_init_dropout(double dropout_rate) {
+    layer_super* layer = layer_init(DROPOUT);
+    layer->layer = dropout_init(dropout_rate);
     return layer;
 }
 
 layer_super* layer_init_gcn(SparseMat* adj, SparseMat* adj_T,int size_f,int size_out) {
     layer_super* layer = layer_init(GCN);
-    layer->gcn_layer = gcn_init(adj, adj_T, size_f, size_out);
-    layer->activation_layer = NULL;
-
+    layer->layer = gcn_init(adj, adj_T, size_f, size_out);
     return layer;
 }
 
@@ -46,27 +49,32 @@ void net_addLayer(neural_net* net,layer_super* layer) {
 
 ParMatrix* net_forward(neural_net* net, ParMatrix* input) {
     for (int i = 0;i<net->n_layers;i++) {
-        if(net->layers[i]->type == ACTIVATION) {
-            //printf("activation %d\n",i);
-            net->layers[i]->activation_layer->input = input;
-            activation_forward(net->layers[i]->activation_layer);
-            input = net->layers[i]->activation_layer->output;
-            //printf("end %d\n",i);
-        }else if(net->layers[i]->type == GCN) {
-            //printf("gcn %d\n",i);
-            net->layers[i]->gcn_layer->input = input;
-            gcn_forward(net->layers[i]->gcn_layer);
-            input = net->layers[i]->gcn_layer->output;
-            //printf("end %d\n",i);
+        if (net->layers[i]->type == ACTIVATION) {
+            activationLayer* activation_layer = (activationLayer *) net->layers[i]->layer;
+            activation_layer->input = input;
+            activation_forward(activation_layer);
+            input = activation_layer->output;
+        } else if(net->layers[i]->type == GCN) {
+            gcnLayer *gcn_layer = (gcnLayer *) net->layers[i]->layer;
+            gcn_layer->input = input;
+            gcn_forward(gcn_layer);
+            input = gcn_layer->output;
+        } else if(net->layers[i]->type == DROPOUT) {
+            dropoutLayer *dropout_layer = (dropoutLayer *) net->layers[i]->layer;
+            dropout_layer->input = input;
+            dropout_forward(dropout_layer);
+            input = dropout_layer->output;
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
     int last = net->n_layers - 1;
     if(net->layers[last]->type == GCN){
-        return net->layers[last]->gcn_layer->output;
+        gcnLayer *gcn_layer = (gcnLayer *) net->layers[last]->layer;
+        return gcn_layer->output;
     } else if(net->layers[last]->type == ACTIVATION){
-        return net->layers[last]->activation_layer->output;
-    }
+        activationLayer *activation_layer = (activationLayer *) net->layers[last]->layer;
+        return activation_layer->output;
+    } // final layer being dropout is not logical
     printf("Something went wrong in forwarding.\n");
     exit(0);
 }
@@ -75,17 +83,19 @@ void net_backward(neural_net* net, Matrix* error, double lr, int t) {
     Matrix* tmp;
     for (int i= net->n_layers-1;i >= 0; i--) {
         if(net->layers[i]->type == GCN) {
+            gcnLayer *gcn_layer = (gcnLayer *) net->layers[i]->layer;
             tmp = error;     
-            error = gcn_backward(net->layers[i]->gcn_layer, error);
+            error = gcn_backward(gcn_layer, error);
             matrix_free(tmp);
-            gcn_step(net->layers[i]->gcn_layer, lr, t);
-            //printf("end %d\n",i);
+            gcn_step(gcn_layer, lr, t);
         } else if(net->layers[i]->type == ACTIVATION) {
-            //printf("activation gcn %d\n",i);
+            activationLayer *activation_layer = (activationLayer *) net->layers[i]->layer;
             tmp = error;
-            error = activation_backward(net->layers[i]->activation_layer, error, lr);
+            error = activation_backward(activation_layer, error, lr);
             matrix_free(tmp);
-            //printf("end %d\n",i);
+        } else if(net->layers[i]->type == DROPOUT) {
+            dropoutLayer *dropout_layer = (dropoutLayer *) net->layers[i]->layer;
+            dropout_backward(dropout_layer, error, lr); // updates 'error' in place
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
@@ -102,9 +112,14 @@ void net_free(neural_net* net) {
 
 void layer_free(layer_super* layer) {
     if (layer->type == ACTIVATION) {
-        activation_free(layer->activation_layer);
+        activationLayer *activation_layer = (activationLayer *) layer->layer;
+        activation_free(activation_layer);
     } else if (layer->type == GCN) {
-        gcn_free(layer->gcn_layer);
+        gcnLayer *gcn_layer = (gcnLayer *) layer->layer;
+        gcn_free(gcn_layer);
+    } else if (layer->type == DROPOUT) {
+        dropoutLayer *dropout_layer = (dropoutLayer *) layer->layer;
+        dropout_free(dropout_layer);
     }
     free(layer);
 }

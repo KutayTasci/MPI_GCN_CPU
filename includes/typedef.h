@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #define STORE_BY_COLUMNS 0
 #define STORE_BY_ROWS    1
 
@@ -49,11 +51,11 @@ typedef struct {
 
 typedef struct {
     Matrix* mat;
-    int gm;
-    int gn;
-    int store;
-    int *l2gMap;
-    int *inPart;
+    int gm; // global rows
+    int gn; // global cols
+    int store; // 0 for column major, 1 for row major
+    int *l2gMap; // local to global map
+    int *inPart; // partitioning
 } ParMatrix;
 
 typedef struct node {
@@ -108,6 +110,7 @@ Matrix* matrix_create(int row, int col);
 void matrix_free(Matrix *m);
 ParMatrix* init_ParMatrix(SparseMat* A, int n);
 void parMatrixFree(ParMatrix* X);
+ParMatrix* create_output_matrix(ParMatrix* input);
 
 sendTable* sendTableCreate(int p_count, int myId, int n); //n equals A->m
 void sendTableFree(sendTable* table);
