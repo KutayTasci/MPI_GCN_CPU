@@ -3,6 +3,8 @@
 
 #include "matrix.h"
 
-void crossEntropy(Matrix *y, Matrix *y_hat);
-void l2Loss(Matrix *y, Matrix *y_hat);
+void totalCrossEntropy(Matrix *y, Matrix *y_hat);
+void totalL2Loss(Matrix *y, Matrix *y_hat);
+void calcCrossEntropy(Matrix *y, Matrix *y_hat, Matrix *error);
+void calcL2Loss(Matrix *y, Matrix *y_hat, Matrix *error);
 #endif // LOSSFUNCTIONS_H_INCLUDED

@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
         output = net_forward(net, X);
         Matrix* soft = matrix_softmax(output->mat);
         matrix_de_crossEntropy(soft, Y->mat, tempErr);
-        //crossEntropy(Y->mat, soft);
+        //totalCrossEntropy(Y->mat, soft);
         //metrics(soft, Y->mat);
 
         net_backward(net, tempErr, 0.001, i);

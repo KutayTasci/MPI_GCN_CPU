@@ -23,7 +23,7 @@ double max(double num1, double num2)
     }
 }
 
-void crossEntropy(Matrix *y, Matrix *y_hat) {
+void totalCrossEntropy(Matrix *y, Matrix *y_hat) {
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
@@ -47,7 +47,7 @@ void crossEntropy(Matrix *y, Matrix *y_hat) {
     }
 }
 
-void l2Loss(Matrix *y, Matrix *y_hat) {
+void totalL2Loss(Matrix *y, Matrix *y_hat) {
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
@@ -69,3 +69,28 @@ void l2Loss(Matrix *y, Matrix *y_hat) {
     }
 }
 
+void calcCrossEntropy(Matrix *y, Matrix *y_hat, Matrix *error) {
+    if ((y->m == y_hat->m) && (y->n == y_hat->n)) {
+        for (int i = 0; i < y->m; i++) {
+           for (int j = 0; j < y_hat->n; j++) {
+                error->entries[i][j] = -1 * (y->entries[i][j] * log(max(y_hat->entries[i][j], 0.001)));
+           }
+        }
+    } else {
+        printf("Dimension mistmatch entropy: %dx%d %dx%d\n", y->m, y->n, y_hat->m, y_hat->n);
+        exit(1);
+    }
+}
+
+void calcL2Loss(Matrix *y, Matrix *y_hat, Matrix *error) {
+    if ((y->m == y_hat->m) && (y->n == y_hat->n)) {
+        for (int i = 0; i < y->m; i++) {
+           for (int j = 0; j < y_hat->n; j++) {
+                error->entries[i][j] = pow(y->entries[i][j] - y_hat->entries[i][j], 2);
+           }
+        }
+    } else {
+        printf("Dimension mistmatch l2 loss: %dx%d %dx%d\n", y->m, y->n, y_hat->m, y_hat->n);
+        exit(1);
+    }
+}
