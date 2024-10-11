@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-    neural_net *net = net_init(3);
+    neural_net *net = net_init(5);
 
     setMode(atoi(argv[2])); //Agregation iterator in gcnLayer.c
     int epoch = atoi(argv[3]);
@@ -126,10 +126,12 @@ int main(int argc, char **argv) {
 
 
     layer_super *gcn_1 = layer_init_gcn(A, A_T, X->gn, hidden_p);
+    layer_super *dropout_1 = layer_init(DROPOUT);
     layer_super *act_1 = layer_init_activation(RELU);
     layer_super *gcn_2 = layer_init_gcn(A, A_T, hidden_p, Y->gn);
 
     net_addLayer(net, gcn_1);
+    net_addLayer(net, dropout_1);
     net_addLayer(net, act_1);
     net_addLayer(net, gcn_2);
 
