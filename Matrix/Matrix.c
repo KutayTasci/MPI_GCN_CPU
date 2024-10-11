@@ -14,7 +14,7 @@ void matrix_fill(Matrix *m, double n) {
     }
 }
 
-void GEMM (Matrix *A, Matrix *B, Matrix *C) {
+void GEMM(Matrix *A, Matrix *B, Matrix *C) {
     int m = A->m;
     int n = A->n;
     int f = B->n;
@@ -25,20 +25,20 @@ void GEMM (Matrix *A, Matrix *B, Matrix *C) {
         return;
     }
     double val;
-    for (i = 0;i<m;i++) {
-        for(j = 0;j<f;j++) {
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < f; j++) {
             C->entries[i][j] = 0;
         }
-        for(k = 0;k<n;k++) {
+        for (k = 0; k < n; k++) {
             val = A->entries[i][k];
-            for (j=0;j<f;j++) {
+            for (j = 0; j < f; j++) {
                 C->entries[i][j] += val * B->entries[k][j];
             }
         }
     }
 }
 
-void GEMM_NT (Matrix *A, Matrix *B, Matrix *C) {
+void GEMM_NT(Matrix *A, Matrix *B, Matrix *C) {
     int m = A->m;
     int n = A->n;
     int f = B->m;
@@ -54,17 +54,17 @@ void GEMM_NT (Matrix *A, Matrix *B, Matrix *C) {
         return;
     }
 
-    for (i=0;i<m;i++) {
-        for (j=0;j<f;j++) {
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < f; j++) {
             C->entries[i][j] = 0;
-            for(k=0;k<n;k++) {
+            for (k = 0; k < n; k++) {
                 C->entries[i][j] += A->entries[i][k] * B->entries[j][k];
             }
         }
     }
 }
 
-void GEMM_TN (Matrix *A, Matrix *B, Matrix *C) {
+void GEMM_TN(Matrix *A, Matrix *B, Matrix *C) {
     int m = A->m;
     int n = A->n;
     int f = B->n;
@@ -75,24 +75,24 @@ void GEMM_TN (Matrix *A, Matrix *B, Matrix *C) {
     //printf("Acessing A => %d %d\n", A->m, A->n);
     //printf("Acessing B => %d %d\n", B->m, B->n);
     //printf("Acessing C => %d %d\n", C->m, C->nmake);
-    
-    
+
+
     if (A->m != B->m) {
         printf("Matrix dimensions are not compatible for multiplication!\n");
         return;
     }
-    
+
     //printf("flag_2 \n");
     //MPI_Barrier(MPI_COMM_WORLD);
 
-    for (i=0;i<m;i++) {
-        for (j=0;j<n;j++) {
-            for(k=0;k<f;k++) {
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            for (k = 0; k < f; k++) {
                 C->entries[j][k] += A->entries[i][j] * B->entries[i][k];
             }
         }
     }
-    
+
     //printf("flag_3 \n");
     //MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -104,7 +104,7 @@ double uniform_distribution(double low, double high) {
     return low + (rand() / div);
 }
 
-void init_weights_random(gcnLayer* layer, int scale) {
+void init_weights_random(gcnLayer *layer, int scale) {
 
     int m = layer->size_f;
     int n = layer->size_output;
@@ -113,7 +113,7 @@ void init_weights_random(gcnLayer* layer, int scale) {
     srand(time(NULL));
     layer->weights = matrix_create(m, n);
 
-    for (int i = 0;i<m;i++) {
+    for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
             layer->weights->entries[i][j] = uniform_distribution(min, max) / 10;
 
@@ -121,7 +121,7 @@ void init_weights_random(gcnLayer* layer, int scale) {
     }
 }
 
-void matrix_print(Matrix* m) {
+void matrix_print(Matrix *m) {
     printf("Rows: %d Columns: %d\n", m->m, m->n);
     for (int i = 0; i < m->m; i++) {
         for (int j = 0; j < m->n; j++) {
@@ -131,7 +131,7 @@ void matrix_print(Matrix* m) {
     }
 }
 
-Matrix* matrix_sum_exp(Matrix* m, int axis) {
+Matrix *matrix_sum_exp(Matrix *m, int axis) {
     if (axis == 0) {
         /*    
         int cols = m->n;
@@ -151,10 +151,10 @@ Matrix* matrix_sum_exp(Matrix* m, int axis) {
         int cols = m->n;
         int rows = m->m;
         double total;
-        Matrix* sum = matrix_create(1, rows);
-        for(int i = 0;i<rows;i++) {
+        Matrix *sum = matrix_create(1, rows);
+        for (int i = 0; i < rows; i++) {
             total = 0;
-            for (int j = 0;j<cols;j++) {
+            for (int j = 0; j < cols; j++) {
                 total += exp(m->entries[i][j]);
             }
             sum->entries[0][i] = total;
@@ -165,8 +165,8 @@ Matrix* matrix_sum_exp(Matrix* m, int axis) {
     }
 }
 
-void matrix_subtract(Matrix* m1, Matrix* m2, Matrix *m) {
-    if((m1->m == m2->m) && (m1->n == m2->n)) {
+void matrix_subtract(Matrix *m1, Matrix *m2, Matrix *m) {
+    if ((m1->m == m2->m) && (m1->n == m2->n)) {
         for (int i = 0; i < m1->m; i++) {
             for (int j = 0; j < m2->n; j++) {
                 m->entries[i][j] = m1->entries[i][j] - m2->entries[i][j];
@@ -178,8 +178,8 @@ void matrix_subtract(Matrix* m1, Matrix* m2, Matrix *m) {
     }
 }
 
-void matrix_sum(Matrix* m1, Matrix* m2, Matrix *m) {
-    if((m1->m == m2->m) && (m1->n == m2->n)) {
+void matrix_sum(Matrix *m1, Matrix *m2, Matrix *m) {
+    if ((m1->m == m2->m) && (m1->n == m2->n)) {
         for (int i = 0; i < m1->m; i++) {
             for (int j = 0; j < m2->n; j++) {
                 m->entries[i][j] = m1->entries[i][j] + m2->entries[i][j];
@@ -191,15 +191,15 @@ void matrix_sum(Matrix* m1, Matrix* m2, Matrix *m) {
     }
 }
 
-void matrix_de_crossEntropy(Matrix* m1, Matrix* m2, Matrix *m) {
-    if((m1->m == m2->m) && (m1->n == m2->n)) {
+void matrix_de_crossEntropy(Matrix *m1, Matrix *m2, Matrix *m) {
+    if ((m1->m == m2->m) && (m1->n == m2->n)) {
         double total = 0;
         for (int i = 0; i < m1->m; i++) {
-			for (int j = 0; j < m1->n; j++) {
-				m->entries[i][j] = m1->entries[i][j] - m2->entries[i][j];
+            for (int j = 0; j < m1->n; j++) {
+                m->entries[i][j] = m1->entries[i][j] - m2->entries[i][j];
 
-			}
-			total++;
+            }
+            total++;
         }
     } else {
         printf("Dimension mistmatch subtract: %dx%d %dx%d\n", m1->m, m1->n, m2->m, m2->n);
@@ -207,7 +207,7 @@ void matrix_de_crossEntropy(Matrix* m1, Matrix* m2, Matrix *m) {
     }
 }
 
-void matrix_multiply(Matrix* m1, Matrix* m2, Matrix *m) {
+void matrix_multiply(Matrix *m1, Matrix *m2, Matrix *m) {
     if ((m1->m == m2->m) && (m1->n == m2->n)) {
         for (int i = 0; i < m1->m; i++) {
             for (int j = 0; j < m2->n; j++) {
@@ -220,7 +220,7 @@ void matrix_multiply(Matrix* m1, Matrix* m2, Matrix *m) {
     }
 }
 
-void matrix_divide(Matrix* m1, Matrix* m2, Matrix *m) {
+void matrix_divide(Matrix *m1, Matrix *m2, Matrix *m) {
     if ((m1->m == m2->m) && (m1->n == m2->n)) {
         for (int i = 0; i < m1->m; i++) {
             for (int j = 0; j < m2->n; j++) {
@@ -234,8 +234,8 @@ void matrix_divide(Matrix* m1, Matrix* m2, Matrix *m) {
 
 }
 
-Matrix* matrix_copy(Matrix* m) {
-    Matrix* mat = matrix_create(m->m, m->n);
+Matrix *matrix_copy(Matrix *m) {
+    Matrix *mat = matrix_create(m->m, m->n);
     for (int i = 0; i < m->m; i++) {
         for (int j = 0; j < m->n; j++) {
             mat->entries[i][j] = m->entries[i][j];
@@ -244,7 +244,7 @@ Matrix* matrix_copy(Matrix* m) {
     return mat;
 }
 
-void matrix_scale(double n, Matrix* mat) {
+void matrix_scale(double n, Matrix *mat) {
     for (int i = 0; i < mat->m; i++) {
         for (int j = 0; j < mat->n; j++) {
             mat->entries[i][j] *= n;
@@ -252,8 +252,8 @@ void matrix_scale(double n, Matrix* mat) {
     }
 }
 
-Matrix* matrix_sqrt(Matrix* mat) {
-    Matrix* mat_new = matrix_create(mat->m, mat->n);
+Matrix *matrix_sqrt(Matrix *mat) {
+    Matrix *mat_new = matrix_create(mat->m, mat->n);
     for (int i = 0; i < mat->m; i++) {
         for (int j = 0; j < mat->n; j++) {
             mat_new->entries[i][j] = sqrt(mat->entries[i][j]);
@@ -262,8 +262,8 @@ Matrix* matrix_sqrt(Matrix* mat) {
     return mat_new;
 }
 
-Matrix* matrix_scale_return(double n, Matrix* mat) {
-    Matrix* mat_new = matrix_create(mat->m, mat->n);
+Matrix *matrix_scale_return(double n, Matrix *mat) {
+    Matrix *mat_new = matrix_create(mat->m, mat->n);
     for (int i = 0; i < mat->m; i++) {
         for (int j = 0; j < mat->n; j++) {
             mat_new->entries[i][j] = mat->entries[i][j] * n;
@@ -272,7 +272,7 @@ Matrix* matrix_scale_return(double n, Matrix* mat) {
     return mat_new;
 }
 
-void matrix_addScalar(Matrix* mat, double n) {
+void matrix_addScalar(Matrix *mat, double n) {
     for (int i = 0; i < mat->m; i++) {
         for (int j = 0; j < mat->n; j++) {
             mat->entries[i][j] += n;
@@ -280,15 +280,15 @@ void matrix_addScalar(Matrix* mat, double n) {
     }
 }
 
-void matrix_MinMaxNorm(Matrix* mat) {
+void matrix_MinMaxNorm(Matrix *mat) {
     for (int i = 0; i < mat->m; i++) {
         double min = mat->entries[i][0];
         double max = mat->entries[i][0];
         for (int j = 1; j < mat->n; j++) {
-            if(mat->entries[i][j] < min) {
+            if (mat->entries[i][j] < min) {
                 min = mat->entries[i][j];
             }
-            if(mat->entries[i][j] > max) {
+            if (mat->entries[i][j] > max) {
                 max = mat->entries[i][j];
             }
         }
@@ -299,11 +299,11 @@ void matrix_MinMaxNorm(Matrix* mat) {
     }
 }
 
-Matrix* matrix_softmax(Matrix* m) {
+Matrix *matrix_softmax(Matrix *m) {
     //Matrix* m = matrix_copy(mat_inp);
     //matrix_MinMaxNorm(m);
-    Matrix* sum = matrix_sum_exp(m, 1);
-    Matrix* mat = matrix_create(m->m, m->n);
+    Matrix *sum = matrix_sum_exp(m, 1);
+    Matrix *mat = matrix_create(m->m, m->n);
     for (int i = 0; i < mat->m; i++) {
         for (int j = 0; j < mat->n; j++) {
             mat->entries[i][j] = exp(m->entries[i][j]) / sum->entries[0][i];
@@ -314,7 +314,7 @@ Matrix* matrix_softmax(Matrix* m) {
     return mat;
 }
 
-void metrics(Matrix* y_hat, Matrix* y) {
+void metrics(Matrix *y_hat, Matrix *y) {
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
@@ -325,7 +325,7 @@ void metrics(Matrix* y_hat, Matrix* y) {
         double max = y_hat->entries[i][0];
         int max_ind = 0;
         for (int j = 1; j < y->n; j++) {
-            if (y_hat->entries[i][j]>max) {
+            if (y_hat->entries[i][j] > max) {
                 max = y_hat->entries[i][j];
                 max_ind = j;
             }
@@ -343,6 +343,6 @@ void metrics(Matrix* y_hat, Matrix* y) {
     MPI_Reduce(&tp, &global_tp, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&total, &global_total, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     if (world_rank == 0) {
-        printf("Accuracy = %lf\n", global_tp / global_total);
+        printf("%lf,", global_tp / global_total);
     }
 }
