@@ -126,11 +126,11 @@ int main(int argc, char **argv) {
 
 
     layer_super *gcn_1 = layer_init_gcn(A, A_T, X->gn, Y->gn);
-//    layer_super *act_1 = layer_init_activation(RELU);
+    layer_super *act_1 = layer_init_activation(RELU);
 //    layer_super *gcn_2 = layer_init_gcn(A, A_T, hidden_p, Y->gn);
 
     net_addLayer(net, gcn_1);
-//    net_addLayer(net, act_1);
+    net_addLayer(net, act_1);
 //    net_addLayer(net, gcn_2);
 
     //for memory opt
