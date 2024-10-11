@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-    neural_net *net = net_init(4);
+    neural_net *net = net_init(3);
 
     setMode(atoi(argv[2])); //Agregation iterator in gcnLayer.c
     int epoch = atoi(argv[3]);
