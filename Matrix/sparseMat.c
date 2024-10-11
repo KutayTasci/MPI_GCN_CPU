@@ -475,7 +475,7 @@ void aggregate_partial_cco(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     //Local comp will be here
     int vertice;
     for (i = A->proc_map[world_rank]; i < A->proc_map[world_rank + 1]; i++) {
-        vertice = A->l2gMap[i];
+//        vertice = A->l2gMap[i];
         int target_node = A->ic[i].v_id;
         for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
             for (k = 0; k < Y->n; k++) {
@@ -714,7 +714,7 @@ void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     //Local comp will be here
     int vertice;
     for (i = A->proc_map[world_rank]; i < A->proc_map[world_rank + 1]; i++) {
-        vertice = A->l2gMap[i];
+//        vertice = A->l2gMap[i];
         int target_node = A->ic[i].v_id;
         for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
             for (k = 0; k < Y->n; k++) {
