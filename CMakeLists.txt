@@ -19,6 +19,8 @@ add_executable(MPI_GCN_CPU
         Matrix/sparseMat.c
         includes/dropoutLayer.h
         NeuralNet/dropoutLayer.c
+        includes/optimizer.h
+        NeuralNet/optimizer.c
 )
 
 target_link_libraries(MPI_GCN_CPU m)

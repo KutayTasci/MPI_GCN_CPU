@@ -25,6 +25,7 @@ typedef struct {
     double *m_bias; // first moment bias
     double *v_bias; // second moment bias
     Matrix *gradients;
+    double *gradients_bias;
     sendBuffer *sendBuffer;
     recvBuffer *recvBuffer;
     sendBuffer *sendBuffer_backward;

@@ -1,6 +1,7 @@
 #include "../includes/gcnLayer.h"
 #include "../includes/sparseMat.h"
 #include "../includes/matrix.h"
+#include "../includes/optimizer.h"
 #include <mpi.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,12 +11,21 @@
 
 int MODE = 0;
 
+inline void initBias(gcnLayer *layer, double d) {
+    layer->bias = (double *) malloc(sizeof(double) * layer->size_output);
+    layer->m_bias = (double *) malloc(sizeof(double) * layer->size_output);
+    layer->v_bias = (double *) malloc(sizeof(double) * layer->size_output);
+    layer->gradients_bias = (double *) malloc(sizeof(double) * layer->size_output);
+    memset(layer->bias, d, sizeof(double) * layer->size_output);
+    memset(layer->m_bias, 0, sizeof(double) * layer->size_output);
+    memset(layer->v_bias, 0, sizeof(double) * layer->size_output);
+}
+
 /*
 Function is ready to be intergrated into sparse_Mat struct
 Then use implement aggregation function
 Don't forget memory management
 */
-
 
 gcnLayer *gcn_init(SparseMat *adj, SparseMat *adj_T, int size_f, int size_out) {
     int world_size;
@@ -228,6 +238,8 @@ gcnLayer *gcn_init(SparseMat *adj, SparseMat *adj_T, int size_f, int size_out) {
     }
     MPI_Bcast(&(layer->weights->entries[0][0]), layer->weights->m * layer->weights->n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
+    initBias(layer, 0);
+
     layer->gradients = matrix_create(layer->size_f, layer->size_output);
     layer->m_weights = matrix_create(layer->size_f, layer->size_output);
     matrix_fill(layer->m_weights, 0);
@@ -237,7 +249,6 @@ gcnLayer *gcn_init(SparseMat *adj, SparseMat *adj_T, int size_f, int size_out) {
 
     free(layer->recvBuffMap);
     free(layer->recvBuffMap_backward);
-
 
     return layer;
 }
@@ -283,7 +294,7 @@ void gcn_forward(gcnLayer *layer) {
             printf("Modes exist for 3=>All-to-ALL Non-blocking non-Overlapping\n");
             exit(1);
     }
-    GEMM(temp, layer->weights, layer->output->mat);
+    GEMM(temp, layer->weights, layer->bias, layer->output->mat);
     matrix_free(temp);
     //TO DO
 }
@@ -327,6 +338,7 @@ Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error) {
 
     GEMM_NT(temp, layer->weights, out);
     GEMM_TN(layer->input->mat, temp, layer->gradients);
+    bias_grad(temp, layer->gradients_bias);
     matrix_free(temp);
     //printf("flag_4 \n");
     return out;
@@ -349,42 +361,48 @@ void gcn_step(gcnLayer *layer, double lr, int t) {
                   MPI_SUM,
                   MPI_COMM_WORLD);
     //printf("%lf \n", layer->gradients->entries[0][0]);
-    matrix_scale(lr, temp);
-
-    matrix_scale(beta1, layer->m_weights);
-    Matrix *temp_m = matrix_scale_return((1 - beta1), temp);
-    matrix_sum(layer->m_weights, temp_m, layer->m_weights);
-
-    //matrix_free(temp_m);
-
-    matrix_scale(beta2, layer->v_weights);
-
-    matrix_multiply(temp, temp, temp_m);
-
-    matrix_scale((1 - beta2), temp_m);
-    matrix_sum(layer->v_weights, temp_m, layer->v_weights);
-
-    matrix_free(temp_m);
-
-    //bias correction can go here
-    Matrix *m_dw_corr = matrix_scale_return(1 / (1 - pow(beta1, t + 1)), layer->m_weights);
-    Matrix *v_dw_corr = matrix_scale_return(1 / (1 - pow(beta2, t + 1)), layer->v_weights);
-
-
-    Matrix *tmp_sqrt = matrix_sqrt(v_dw_corr);
-    matrix_addScalar(tmp_sqrt, epsilon);
-    matrix_divide(m_dw_corr, tmp_sqrt, tmp_sqrt);
-    matrix_scale(eta, tmp_sqrt);
-
-
-    matrix_subtract(layer->weights, tmp_sqrt, layer->weights);
-
-
-    //printf("%lf \n", layer->weights->entries[0][0]);
-    matrix_free(temp);
-    matrix_free(tmp_sqrt);
-    matrix_free(m_dw_corr);
-    matrix_free(v_dw_corr);
+//    matrix_scale(lr, temp);
+//
+//    matrix_scale(beta1, layer->m_weights);
+//    Matrix *temp_m = matrix_scale_return((1 - beta1), temp);
+//    matrix_sum(layer->m_weights, temp_m, layer->m_weights);
+//
+//    //matrix_free(temp_m);
+//
+//    matrix_scale(beta2, layer->v_weights);
+//
+//    matrix_multiply(temp, temp, temp_m);
+//
+//    matrix_scale((1 - beta2), temp_m);
+//    matrix_sum(layer->v_weights, temp_m, layer->v_weights);
+//
+//    matrix_free(temp_m);
+//
+//    //bias correction can go here
+//    Matrix *m_dw_corr = matrix_scale_return(1 / (1 - pow(beta1, t + 1)), layer->m_weights);
+//    Matrix *v_dw_corr = matrix_scale_return(1 / (1 - pow(beta2, t + 1)), layer->v_weights);
+//
+//
+//    Matrix *tmp_sqrt = matrix_sqrt(v_dw_corr);
+//    matrix_addScalar(tmp_sqrt, epsilon);
+//    matrix_divide(m_dw_corr, tmp_sqrt, tmp_sqrt);
+//    matrix_scale(eta, tmp_sqrt);
+//
+//
+//    matrix_subtract(layer->weights, tmp_sqrt, layer->weights);
+//
+//
+//    //printf("%lf \n", layer->weights->entries[0][0]);
+//    matrix_free(temp);
+//    matrix_free(tmp_sqrt);
+//    matrix_free(m_dw_corr);
+//    matrix_free(v_dw_corr);
+    // update weights
+    // update bias
+    Matrix *sum_bias_grad = matrix_create(1, layer->size_output); // 1xsize_output
+    MPI_Allreduce(&(layer->gradients_bias[0]), &(sum_bias_grad->entries[0][0]),
+                  layer->size_output, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    adam_step(temp, layer->weights, sum_bias_grad, layer->bias, lr, beta1, beta2, epsilon, t);
 }
 
 void gcn_free(gcnLayer *layer) {
