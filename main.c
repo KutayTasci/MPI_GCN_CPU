@@ -125,13 +125,13 @@ int main(int argc, char **argv) {
     }
 
 
-    layer_super *gcn_1 = layer_init_gcn(A, A_T, X->gn, Y->gn);
+    layer_super *gcn_1 = layer_init_gcn(A, A_T, X->gn, hidden_p);
     layer_super *act_1 = layer_init_activation(RELU);
-//    layer_super *gcn_2 = layer_init_gcn(A, A_T, hidden_p, Y->gn);
+    layer_super *gcn_2 = layer_init_gcn(A, A_T, hidden_p, Y->gn);
 
     net_addLayer(net, gcn_1);
     net_addLayer(net, act_1);
-//    net_addLayer(net, gcn_2);
+    net_addLayer(net, gcn_2);
 
     //for memory opt
     if (atoi(argv[2]) != 0) {
@@ -173,8 +173,8 @@ int main(int argc, char **argv) {
         output = net_forward(net, X);
         Matrix *soft = matrix_softmax(output->mat);
         matrix_de_crossEntropy(soft, Y->mat, tempErr);
-        //totalCrossEntropy(Y->mat, soft);
-        //metrics(soft, Y->mat);
+        totalCrossEntropy(Y->mat, soft);
+        metrics(soft, Y->mat);
 
         net_backward(net, tempErr, 0.001, i);
 
