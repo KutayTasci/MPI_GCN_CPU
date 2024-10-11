@@ -126,14 +126,16 @@ int main(int argc, char **argv) {
 
 
     layer_super *gcn_1 = layer_init_gcn(A, A_T, X->gn, hidden_p);
-    layer_super *dropout_1 = layer_init_dropout(0.5);
+//    layer_super *dropout_1 = layer_init_dropout(0.5);
     layer_super *act_1 = layer_init_activation(RELU);
     layer_super *gcn_2 = layer_init_gcn(A, A_T, hidden_p, Y->gn);
+//    layer_super *dropout_2 = layer_init_dropout(0.5);
 
     net_addLayer(net, gcn_1);
-    net_addLayer(net, dropout_1);
+//    net_addLayer(net, dropout_1);
     net_addLayer(net, act_1);
     net_addLayer(net, gcn_2);
+//    net_addLayer(net, dropout_2);
 
     //for memory opt
     if (atoi(argv[2]) != 0) {
