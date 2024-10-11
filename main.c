@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
 
 
     layer_super *gcn_1 = layer_init_gcn(A, A_T, X->gn, hidden_p);
-    layer_super *dropout_1 = layer_init(DROPOUT);
+    layer_super *dropout_1 = layer_init_dropout(0.5);
     layer_super *act_1 = layer_init_activation(RELU);
     layer_super *gcn_2 = layer_init_gcn(A, A_T, hidden_p, Y->gn);
 
