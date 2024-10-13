@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
     double train_ratio = 0.8;
     bool *train_mask = masking_init(X->mat->m, train_ratio, 123);
     layer_super *gcn_1 = layer_init_gcn(A, A_T, X->gn, hidden_p, train_mask);
-    layer_super *dropout_1 = layer_init_dropout(0.5);
+    layer_super *dropout_1 = layer_init_dropout(0.3);
     layer_super *act_1 = layer_init_activation(RELU);
     layer_super *gcn_2 = layer_init_gcn(A, A_T, hidden_p, Y->gn, train_mask);
     layer_super *dropout_2 = layer_init_dropout(0.5);
