@@ -70,7 +70,7 @@ ParMatrix *net_forward(neural_net *net, ParMatrix *input, bool eval) {
         MPI_Barrier(MPI_COMM_WORLD);
     }
     int last = net->n_layers - 1;
-    
+
     if (net->layers[last]->type == GCN) {
         gcnLayer *gcn_layer = (gcnLayer *) net->layers[last]->layer;
         return gcn_layer->output;
@@ -103,7 +103,6 @@ void net_backward(neural_net *net, Matrix *error, double lr, int t) {
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
-    matrix_free(error);
 }
 
 
