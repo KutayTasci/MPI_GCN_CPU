@@ -165,6 +165,7 @@ int main(int argc, char **argv) {
     }
     ParMatrix *output;
     double t1, t2, t3;
+    printf("Fine\n");
     output = net_forward(net, X, false);
     double tot = 0;
     double min = 99999;
