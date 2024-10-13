@@ -46,6 +46,6 @@ void matrix_addScalar(Matrix *mat, double n);
 
 void matrix_MinMaxNorm(Matrix *mat);
 
-void metrics(Matrix *y_hat, Matrix *y);
+void metrics(Matrix *y_hat, Matrix *y, bool *mask);
 
 #endif // MATRIX_H_INCLUDED

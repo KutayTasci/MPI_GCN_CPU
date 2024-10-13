@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
         // test
         output = net_forward(net, X, true);
         soft = matrix_softmax(output->mat);
-        metrics(soft, Y->mat);
+        metrics(soft, Y->mat, train_mask);
         matrix_free(soft);
     }
     if (world_rank == 0) {
