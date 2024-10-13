@@ -189,10 +189,10 @@ int main(int argc, char **argv) {
             min = t2 - t1;
         }
         // test
-        output = net_forward(net, X, true);
-        soft = matrix_softmax(output->mat);
-        metrics(soft, Y->mat);
-        matrix_free(soft);
+//        output = net_forward(net, X, true);
+//        soft = matrix_softmax(output->mat);
+//        metrics(soft, Y->mat);
+//        matrix_free(soft);
     }
     matrix_free(tempErr);
     if (world_rank == 0) {
