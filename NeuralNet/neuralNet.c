@@ -77,8 +77,11 @@ ParMatrix *net_forward(neural_net *net, ParMatrix *input, bool eval) {
     } else if (net->layers[last]->type == ACTIVATION) {
         activationLayer *activation_layer = (activationLayer *) net->layers[last]->layer;
         return activation_layer->output;
+    } else if (net->layers[last]->type == DROPOUT) {
+        dropoutLayer *dropout_layer = (dropoutLayer *) net->layers[last]->layer;
+        return dropout_layer->output;
     } else {
-        printf("Last layer is not GCN or Activation\n");
+        printf("Invalid layer type at last layer\n");
         exit(1);
     }
 }
