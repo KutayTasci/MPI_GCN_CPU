@@ -633,7 +633,7 @@ void aggregate_cco(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
 
 }
 
-void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
+void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step, bool eval) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -697,7 +697,13 @@ void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
         base = bufferS->pid_map[k];
         for (j = 0; j < range; j++) {
             ind = bufferS->vertices_local[base + j];
-            memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
+            bool mask_factor = layer->mask[ind] ^ eval;
+//            memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
+            if (mask_factor) {
+                memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
+            } else {
+                memset(bufferS->data[base + j], 0, sizeof(double) * bufferR->feature_size);
+            }
         }
         MPI_Send(&(bufferS->data[base][0]),
                  range * bufferS->feature_size,

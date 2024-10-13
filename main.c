@@ -12,6 +12,7 @@
 #include "includes/lossFunctions.h"
 #include "includes/sparseMat.h"
 #include <sys/sysinfo.h>
+#include "includes/masking.h"
 
 
 //CMD args dataset  MODE epoch
@@ -27,8 +28,6 @@ int main(int argc, char **argv) {
     // Get the rank of the process
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-    neural_net *net = net_init(5);
 
     setMode(atoi(argv[2])); //Agregation iterator in gcnLayer.c
     int epoch = atoi(argv[3]);
@@ -110,6 +109,8 @@ int main(int argc, char **argv) {
     ParMatrix *X = readDenseMat(densefname, A);
     ParMatrix *Y = readDenseMat(labels, A);
 
+    neural_net *net = net_init(10);
+
     MPI_Barrier(MPI_COMM_WORLD);
     if (world_rank == 0) {
         printf("reading finished\n");
@@ -123,12 +124,12 @@ int main(int argc, char **argv) {
         printf("Free memory: %lu bytes\n", free_memory);
 
     }
-
-
-    layer_super *gcn_1 = layer_init_gcn(A, A_T, X->gn, hidden_p);
+    double train_ratio = 0.8;
+    bool *train_mask = masking_init(X->mat->m, train_ratio, 123);
+    layer_super *gcn_1 = layer_init_gcn(A, A_T, X->gn, hidden_p, train_mask);
 //    layer_super *dropout_1 = layer_init_dropout(0.5);
     layer_super *act_1 = layer_init_activation(RELU);
-    layer_super *gcn_2 = layer_init_gcn(A, A_T, hidden_p, Y->gn);
+    layer_super *gcn_2 = layer_init_gcn(A, A_T, hidden_p, Y->gn, train_mask);
 //    layer_super *dropout_2 = layer_init_dropout(0.5);
 
     net_addLayer(net, gcn_1);
@@ -164,35 +165,36 @@ int main(int argc, char **argv) {
     }
     ParMatrix *output;
     double t1, t2, t3;
-    output = net_forward(net, X);
+    output = net_forward(net, X, false);
     double tot = 0;
     double min = 99999;
-
+    Matrix *tempErr = matrix_create(Y->mat->m, Y->gn);
     for (int i = 0; i < epoch; i++) {
-        Matrix *tempErr = matrix_create(Y->mat->m, Y->gn);
-
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
 
-        output = net_forward(net, X);
+        output = net_forward(net, X, false);
+
         Matrix *soft = matrix_softmax(output->mat);
-        matrix_de_crossEntropy(soft, Y->mat, tempErr);
+        matrix_de_crossEntropy(soft, Y->mat, tempErr, train_mask);
 //        totalCrossEntropy(Y->mat, soft);
-        metrics(soft, Y->mat);
 
         net_backward(net, tempErr, 0.001, i);
-
 
         MPI_Barrier(MPI_COMM_WORLD);
         t2 = MPI_Wtime();
         matrix_free(soft);
-
-
         tot += t2 - t1;
         if (min > t2 - t1) {
             min = t2 - t1;
         }
+        // test
+        output = net_forward(net, X, true);
+        soft = matrix_softmax(output->mat);
+        metrics(soft, Y->mat);
+        matrix_free(soft);
     }
+    matrix_free(tempErr);
     if (world_rank == 0) {
         printf("Average runtime for current experiment=> %lf\n", tot / epoch);
         printf("Min runtime for current experiment=> %lf\n", min);

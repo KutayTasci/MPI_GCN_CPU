@@ -191,15 +191,13 @@ void matrix_sum(Matrix *m1, Matrix *m2, Matrix *m) {
     }
 }
 
-void matrix_de_crossEntropy(Matrix *m1, Matrix *m2, Matrix *m) {
+void matrix_de_crossEntropy(Matrix *m1, Matrix *m2, Matrix *m, bool *mask) {
     if ((m1->m == m2->m) && (m1->n == m2->n)) {
-        double total = 0;
         for (int i = 0; i < m1->m; i++) {
             for (int j = 0; j < m1->n; j++) {
-                m->entries[i][j] = m1->entries[i][j] - m2->entries[i][j];
+                m->entries[i][j] = (m1->entries[i][j] - m2->entries[i][j]) * mask[i]; //non-masked are excluded
 
             }
-            total++;
         }
     } else {
         printf("Dimension mistmatch subtract: %dx%d %dx%d\n", m1->m, m1->n, m2->m, m2->n);

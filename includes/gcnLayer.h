@@ -5,8 +5,8 @@
 #include "basic.h"
 
 
-#define FORWARD 101
-#define BACKWARD 102
+#define FORWARD 0
+#define BACKWARD 1
 
 typedef struct {
     int size_n;
@@ -33,13 +33,14 @@ typedef struct {
     int msgRecvCount;
     int msgSendCount_b;
     int msgRecvCount_b;
+    bool *mask;
 } gcnLayer;
 
 gcnLayer *gcn_init(SparseMat *adj, SparseMat *adj_T, int size_f, int size_out);
 
 void setMode(int i);
 
-void gcn_forward(gcnLayer *layer);
+void gcn_forward(gcnLayer *layer, bool eval);
 
 Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error);
 
