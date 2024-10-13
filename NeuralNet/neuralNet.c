@@ -103,6 +103,7 @@ void net_backward(neural_net *net, Matrix *error, double lr, int t) {
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
+    matrix_free(error);
 }
 
 

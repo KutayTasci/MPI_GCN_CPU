@@ -168,8 +168,8 @@ int main(int argc, char **argv) {
     output = net_forward(net, X, false);
     double tot = 0;
     double min = 99999;
-    Matrix *tempErr = matrix_create(Y->mat->m, Y->gn);
     for (int i = 0; i < epoch; i++) {
+        Matrix *tempErr = matrix_create(Y->mat->m, Y->gn);
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
 
@@ -194,7 +194,6 @@ int main(int argc, char **argv) {
         metrics(soft, Y->mat);
         matrix_free(soft);
     }
-    matrix_free(tempErr);
     if (world_rank == 0) {
         printf("Average runtime for current experiment=> %lf\n", tot / epoch);
         printf("Min runtime for current experiment=> %lf\n", min);
