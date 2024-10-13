@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
     net_addLayer(net, dropout_1);
     net_addLayer(net, act_1);
     net_addLayer(net, gcn_2);
-    net_addLayer(net, dropout_2);
+//    net_addLayer(net, dropout_2);
 
     //for memory opt
     if (atoi(argv[2]) != 0) {
