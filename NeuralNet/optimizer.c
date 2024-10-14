@@ -4,9 +4,8 @@
 #include <math.h>
 #include "../includes/optimizer.h"
 
-void
-adam_step(Matrix *gradients, Matrix *gradients_bias, gcnLayer *layer, double lr, double beta1, double beta2,
-          double epsilon, int t) {
+void adam_step(Matrix *gradients, Matrix *gradients_bias, gcnLayer *layer, double lr, double beta1, double beta2,
+               double epsilon, int t) {
     for (int i = 0; i < gradients->m; i++) {
         for (int j = 0; j < gradients->n; j++) {
             // first and second moments for weights
