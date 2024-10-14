@@ -9,7 +9,7 @@
 #include "typedef.h"
 
 void
-adam_step(Matrix *gradients, Matrix *weights, Matrix *bias_grad, double *bias, double lr, double beta1, double beta2,
+adam_step(Matrix *gradients, Matrix *gradients_bias, gcnLayer *layer, double lr, double beta1, double beta2,
           double epsilon, int t);
 
 
