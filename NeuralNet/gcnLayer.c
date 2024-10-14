@@ -340,7 +340,6 @@ Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error) {
     GEMM_TN(layer->input->mat, temp, layer->gradients);
     bias_grad(temp, layer->gradients_bias);
     matrix_free(temp);
-    //printf("flag_4 \n");
     return out;
 }
 
@@ -403,6 +402,8 @@ void gcn_step(gcnLayer *layer, double lr, int t) {
     MPI_Allreduce(&(layer->gradients_bias[0]), &(sum_bias_grad->entries[0][0]),
                   layer->size_output, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     adam_step(temp, sum_bias_grad, layer, lr, beta1, beta2, epsilon, t);
+    matrix_free(sum_bias_grad);
+    matrix_free(temp);
 }
 
 void gcn_free(gcnLayer *layer) {

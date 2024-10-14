@@ -85,7 +85,6 @@ void GEMM_TN(Matrix *A, Matrix *B, Matrix *C) {
         return;
     }
 
-    //printf("flag_2 \n");
     //MPI_Barrier(MPI_COMM_WORLD);
 
     for (i = 0; i < m; i++) {
@@ -96,16 +95,14 @@ void GEMM_TN(Matrix *A, Matrix *B, Matrix *C) {
         }
     }
 
-    //printf("flag_3 \n");
     //MPI_Barrier(MPI_COMM_WORLD);
 }
 
 // Bias gradient
 void bias_grad(Matrix *y_prime, double *gradients) {
     for (int i = 0; i < y_prime->m; i++) {
-        gradients[i] = 0;
         for (int j = 0; j < y_prime->n; j++) {
-            gradients[i] += y_prime->entries[i][j];
+            gradients[j] += y_prime->entries[i][j];
         }
     }
 }
