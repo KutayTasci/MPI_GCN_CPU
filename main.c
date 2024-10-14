@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
     bool *train_mask = masking_init(X->mat->m, train_ratio, 123);
     layer_super *gcn_1 = layer_init_gcn(A, A_T, X->gn, hidden_p, train_mask);
     layer_super *dropout_1 = layer_init_dropout(0.3);
-    layer_super *act_1 = layer_init_activation(RELU);
+    layer_super *act_1 = layer_init_activation(LEAKY_RELU);
     layer_super *gcn_2 = layer_init_gcn(A, A_T, hidden_p, Y->gn, train_mask);
     layer_super *dropout_2 = layer_init_dropout(0.5);
 
@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
         matrix_de_crossEntropy(soft, Y->mat, tempErr, train_mask);
 //        totalCrossEntropy(Y->mat, soft);
 
-        net_backward(net, tempErr, 0.001, i);
+        net_backward(net, tempErr, 0.0015, i);
 
         MPI_Barrier(MPI_COMM_WORLD);
         t2 = MPI_Wtime();

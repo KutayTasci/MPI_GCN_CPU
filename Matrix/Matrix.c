@@ -100,6 +100,7 @@ void GEMM_TN(Matrix *A, Matrix *B, Matrix *C) {
 
 // Bias gradient
 void bias_grad(Matrix *y_prime, double *gradients) {
+    memset(gradients, 0, y_prime->n * sizeof(double));
     for (int i = 0; i < y_prime->m; i++) {
         for (int j = 0; j < y_prime->n; j++) {
             gradients[j] += y_prime->entries[i][j];

@@ -399,9 +399,8 @@ void gcn_step(gcnLayer *layer, double lr, int t) {
     // update weights
     // update bias
     Matrix *sum_bias_grad = matrix_create(1, layer->size_output); // 1xsize_output
-//    MPI_Allreduce(&(layer->gradients_bias[0]), &(sum_bias_grad->entries[0][0]),
-//                  layer->size_output, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    matrix_fill(sum_bias_grad, 0); // for testing
+    MPI_Allreduce(&(layer->gradients_bias[0]), &(sum_bias_grad->entries[0][0]),
+                  layer->size_output, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     adam_step(temp, sum_bias_grad, layer, lr, beta1, beta2, epsilon, t);
     matrix_free(sum_bias_grad);
     matrix_free(temp);
