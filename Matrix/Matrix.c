@@ -203,15 +203,13 @@ void matrix_sum(Matrix *m1, Matrix *m2, Matrix *m) {
     }
 }
 
-void matrix_de_crossEntropy(Matrix *m1, Matrix *m2, Matrix *m) {
+void matrix_de_crossEntropy(Matrix *m1, Matrix *m2, Matrix *m, bool *mask) {
     if ((m1->m == m2->m) && (m1->n == m2->n)) {
-        double total = 0;
         for (int i = 0; i < m1->m; i++) {
             for (int j = 0; j < m1->n; j++) {
-                m->entries[i][j] = m1->entries[i][j] - m2->entries[i][j];
+                m->entries[i][j] = (m1->entries[i][j] - m2->entries[i][j]) * mask[i]; //non-masked are excluded
 
             }
-            total++;
         }
     } else {
         printf("Dimension mistmatch subtract: %dx%d %dx%d\n", m1->m, m1->n, m2->m, m2->n);
@@ -326,7 +324,7 @@ Matrix *matrix_softmax(Matrix *m) {
     return mat;
 }
 
-void metrics(Matrix *y_hat, Matrix *y) {
+void metrics(Matrix *y_hat, Matrix *y, bool *mask) {
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
@@ -334,6 +332,9 @@ void metrics(Matrix *y_hat, Matrix *y) {
     double fp = 0;
     int total = 0;
     for (int i = 0; i < y->m; i++) {
+        if (mask[i]) {
+            continue;
+        }
         double max = y_hat->entries[i][0];
         int max_ind = 0;
         for (int j = 1; j < y->n; j++) {
@@ -355,6 +356,6 @@ void metrics(Matrix *y_hat, Matrix *y) {
     MPI_Reduce(&tp, &global_tp, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&total, &global_total, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     if (world_rank == 0) {
-        printf("Accuracy = %lf\n", global_tp / global_total);
+        printf("%lf,", global_tp / global_total);
     }
 }

@@ -26,7 +26,7 @@ void matrix_subtract(Matrix *m1, Matrix *m2, Matrix *m);
 
 void matrix_sum(Matrix *m1, Matrix *m2, Matrix *m);
 
-void matrix_de_crossEntropy(Matrix *m1, Matrix *m2, Matrix *m);
+void matrix_de_crossEntropy(Matrix *m1, Matrix *m2, Matrix *m, bool *mask);
 
 void matrix_l2Loss(Matrix *m1, Matrix *m2, Matrix *m);
 
@@ -48,6 +48,6 @@ void matrix_addScalar(Matrix *mat, double n);
 
 void matrix_MinMaxNorm(Matrix *mat);
 
-void metrics(Matrix *y_hat, Matrix *y);
+void metrics(Matrix *y_hat, Matrix *y, bool *mask);
 
 #endif // MATRIX_H_INCLUDED

@@ -21,6 +21,8 @@ add_executable(MPI_GCN_CPU
         NeuralNet/dropoutLayer.c
         includes/optimizer.h
         NeuralNet/optimizer.c
+        includes/masking.h
+        NeuralNet/masking.c
 )
 
 target_link_libraries(MPI_GCN_CPU m)

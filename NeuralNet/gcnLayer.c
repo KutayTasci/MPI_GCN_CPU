@@ -257,7 +257,7 @@ void setMode(int i) {
     MODE = i;
 }
 
-void gcn_forward(gcnLayer *layer) {
+void gcn_forward(gcnLayer *layer, bool eval) {
 
     Matrix *temp = matrix_create(layer->size_n, layer->size_f);
 
@@ -275,7 +275,7 @@ void gcn_forward(gcnLayer *layer) {
             aggregate_partial_cco(layer, layer->input->mat, temp, FORWARD);
             break;
         case 4:
-            aggregate_csc(layer, layer->input->mat, temp, FORWARD);
+            aggregate_csc(layer, layer->input->mat, temp, FORWARD, eval);
             break;
         case 5:
             aggregate_cco_csc(layer, layer->input->mat, temp, FORWARD);
@@ -317,7 +317,7 @@ Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error) {
             aggregate_partial_cco(layer, out_error, temp, BACKWARD);
             break;
         case 4:
-            aggregate_csc(layer, out_error, temp, BACKWARD);
+            aggregate_csc(layer, out_error, temp, BACKWARD, false);
             break;
         case 5:
             aggregate_cco_csc(layer, out_error, temp, BACKWARD);

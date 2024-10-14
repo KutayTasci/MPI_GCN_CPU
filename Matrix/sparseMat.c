@@ -94,9 +94,9 @@ void aggregate_gemm_overlap(gcnLayer *layer, Matrix *X, Matrix *Y, Matrix *B, Ma
 
 
     //Local comp will be here
-    int vertice;
+//    int vertice;
     for (i = A->proc_map[world_rank]; i < A->proc_map[world_rank + 1]; i++) {
-        vertice = A->l2gMap[i];
+//        vertice = A->l2gMap[i];
         int target_node = A->ic[i].v_id;
         for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
             for (k = 0; k < Y->n; k++) {
@@ -475,7 +475,7 @@ void aggregate_partial_cco(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     //Local comp will be here
     int vertice;
     for (i = A->proc_map[world_rank]; i < A->proc_map[world_rank + 1]; i++) {
-        vertice = A->l2gMap[i];
+//        vertice = A->l2gMap[i];
         int target_node = A->ic[i].v_id;
         for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
             for (k = 0; k < Y->n; k++) {
@@ -633,7 +633,7 @@ void aggregate_cco(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
 
 }
 
-void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
+void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step, bool eval) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -697,7 +697,13 @@ void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
         base = bufferS->pid_map[k];
         for (j = 0; j < range; j++) {
             ind = bufferS->vertices_local[base + j];
-            memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
+            bool mask_factor = layer->mask[ind] ^ eval;
+//            memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
+            if (mask_factor) {
+                memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
+            } else {
+                memset(bufferS->data[base + j], 0, sizeof(double) * bufferR->feature_size);
+            }
         }
         MPI_Send(&(bufferS->data[base][0]),
                  range * bufferS->feature_size,
@@ -714,7 +720,7 @@ void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     //Local comp will be here
     int vertice;
     for (i = A->proc_map[world_rank]; i < A->proc_map[world_rank + 1]; i++) {
-        vertice = A->l2gMap[i];
+//        vertice = A->l2gMap[i];
         int target_node = A->ic[i].v_id;
         for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
             for (k = 0; k < Y->n; k++) {
@@ -831,7 +837,7 @@ void aggregate_cco_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
 
     //Local comp will be here
     for (i = A->proc_map[world_rank]; i < A->proc_map[world_rank + 1]; i++) {
-        int vertice = A->l2gMap[i];
+//        int vertice = A->l2gMap[i];
         int target_node = A->ic[i].v_id;
         for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
             for (k = 0; k < Y->n; k++) {
@@ -960,7 +966,7 @@ void aggregate_cco_hybrid(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
 
     //Local comp will be here
     for (i = A->proc_map[world_rank]; i < A->proc_map[world_rank + 1]; i++) {
-        int vertice = A->l2gMap[i];
+//        int vertice = A->l2gMap[i];
         int target_node = A->ic[i].v_id;
         for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
             for (k = 0; k < Y->n; k++) {
