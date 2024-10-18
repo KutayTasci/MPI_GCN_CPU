@@ -17,19 +17,26 @@ void copyPath(const char *dir, char *file_name, char *dest) {
     strcat(dest, file_name);
 }
 
-void process_directory(const char *dir_path, char *adj_file, char *inpart, char *tp_comm_file) {
+bool checkReduced(char *file_name) {
+    return strstr(file_name, ".reduced") != NULL;
+}
+
+void process_directory(const char *dir_path, char *adj_file, char *inpart, char *tp_comm_file, CommType comm_type) {
+    bool reduced = comm_type > 7;
     DIR *dir = opendir(dir_path);
     if (dir) {
         struct dirent *ent;
         while ((ent = readdir(dir)) != NULL) {
             if (strstr(ent->d_name, "inpart") != NULL) {
+                bool wrong_file = reduced ^ checkReduced(ent->d_name);
+                if (wrong_file) continue;
                 // if ends with .bin
                 if (strstr(ent->d_name, ".bin") != NULL) {
                     copyPath(dir_path, ent->d_name, adj_file);
                 } else {
                     copyPath(dir_path, ent->d_name, inpart);
                 }
-            } else if (strstr(ent->d_name, "tp_comm") != NULL) {
+            } else if (strstr(ent->d_name, ".phase") != NULL) {
                 copyPath(dir_path, ent->d_name, tp_comm_file);
             }
         }
@@ -37,29 +44,38 @@ void process_directory(const char *dir_path, char *adj_file, char *inpart, char 
     }
 }
 
+#define printf_r0(...) if (world_rank == 0) printf(__VA_ARGS__)
+
+void exit_safe() {
+    MPI_Finalize();
+    exit(0);
+}
+
 args parseArgs(int argc, char **argv) {
+    int world_rank, world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     args ret;
-    char *usage = "Usage: MPI_GCN_CPU <dataset_folder> <inpart_path> <n_threads> <n_epochs> <agg_mode> <-l lr> <-d dropout_rate> <-t inpart_transpose_path> <-s hidden_size>\n";
+    char *usage = "Usage: MPI_GCN_CPU <dataset_folder> <inpart_folder> <n_threads> <n_epochs> <agg_mode> <-l lr> <-d dropout_rate> <-t inpart_T_folder> <-s hidden_size>\n";
     if (argc < 6 || strcmp(argv[1], "-h") == 0) {
-        printf("%s", usage);
-        printf("inpart_path, inpart_transpose_path: must contain inpart and inpart.bin files\n");
-        printf("dataset_folder: must contain features.csv and labels.csv\n");
-        exit(1);
+        printf_r0("%s", usage);
+        printf_r0("inpart_path, inpart_transpose_path: must contain inpart and inpart.bin files\n");
+        printf_r0("dataset_folder: must contain features.csv and labels.csv\n");
+        exit_safe();
     }
     strcpy(ret.features_file, argv[1]);
     strcat(ret.features_file, "/features.csv");
     strcpy(ret.labels_file, argv[1]);
     strcat(ret.labels_file, "/labels.csv");
 
-    process_directory(argv[2], ret.adj_file, ret.inpart, ret.tp_comm_file);
-
     ret.n_threads = atoi(argv[3]);
     ret.n_epochs = atoi(argv[4]);
     ret.comm_type = atoi(argv[5]);
     if (ret.comm_type < 0 || ret.comm_type > 8) {
-        printf("Invalid aggregation mode. Must be between 0 and 8\n");
-        exit(1);
+        printf_r0("Invalid aggregation mode. Must be between 0 and 8\n");
+        exit_safe();
     }
+    process_directory(argv[2], ret.adj_file, ret.inpart, ret.tp_comm_file, ret.comm_type);
     // set defaults
     ret.dropout_rate = 0.5;
     ret.symmetric = true;
@@ -71,29 +87,26 @@ args parseArgs(int argc, char **argv) {
         if (strcmp(argv[i], "-d") == 0) {
             ret.dropout_rate = atof(argv[i + 1]);
             if (ret.dropout_rate < 0 || ret.dropout_rate > 1) {
-                printf("Invalid dropout rate. Must be between 0 and 1\n");
-                exit(1);
+                printf_r0("Invalid dropout rate. Must be between 0 and 1\n");
+                exit_safe();
             }
         } else if (strcmp(argv[i], "-t") == 0) {
-            process_directory(argv[i + 1], ret.adj_T_file, ret.inpart_T, ret.tp_comm_file_T);
+            process_directory(argv[i + 1], ret.adj_T_file, ret.inpart_T, ret.tp_comm_file_T, ret.comm_type);
             ret.symmetric = false;
         } else if (strcmp(argv[i], "-l") == 0) {
             ret.lr = atof(argv[i + 1]);
             if (ret.lr <= 0) {
-                printf("Invalid learning rate. Must be greater than 0\n");
-                exit(1);
+                printf_r0("Invalid learning rate. Must be greater than 0\n");
+                exit_safe();
             }
         } else if (strcmp(argv[i], "-s") == 0) {
             ret.hidden_size = atoi(argv[i + 1]);
             if (ret.hidden_size <= 0) {
-                printf("Invalid hidden size. Must be greater than 0\n");
-                exit(1);
+                printf_r0("Invalid hidden size. Must be greater than 0\n");
+                exit_safe();
             }
         }
     }
-    int world_rank, world_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     char *agg_info[] = {"Default Non-Overlapping CSR",
                         "Non-Overlapping CSR with with our datas structure",
                         "Overlapping CSR with with our datas structure",
@@ -103,21 +116,20 @@ args parseArgs(int argc, char **argv) {
                         "Overlapping CSC and CSR Hybrid",
                         "Full+Full",
                         "TP"};
-    if (world_rank == 0) {
-        printf("Experimental settings\n");
-        printf("Dataset: %s\n", argv[1]);
-        printf("Processor Count:%d - Hidden_Parameter:%d\n", world_size, ret.hidden_size);
-        printf("Aggregation Mode: %s\n", agg_info[ret.comm_type]);
-        printf("--------------\n");
-    }
+    printf_r0("Experimental settings\n");
+    printf_r0("Dataset: %s\n", argv[1]);
+    printf_r0("Processor Count:%d - Hidden_Parameter:%d\n", world_size, ret.hidden_size);
+    printf_r0("Aggregation Mode: %s\n", agg_info[ret.comm_type]);
+    printf_r0("--------------\n");
+
     if (ret.comm_type == 8) {
         if (ret.tp_comm_file[0] == '\0') {
-            printf("TP aggregation mode selected but no tp_comm file found\n");
-            exit(1);
+            printf_r0("TP aggregation mode selected but no tp_comm file found\n");
+            exit_safe();
         }
         if (!ret.symmetric && ret.tp_comm_file_T[0] == '\0') {
-            printf("TP aggregation mode selected but no tp_comm file found for transpose\n");
-            exit(1);
+            printf_r0("TP aggregation mode selected but no tp_comm file found for transpose\n");
+            exit_safe();
         }
     }
     return ret;
