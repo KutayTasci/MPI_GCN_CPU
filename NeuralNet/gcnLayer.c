@@ -262,7 +262,8 @@ void gcn_forward(gcnLayer *layer, bool eval) {
 
     Matrix *temp = matrix_create(layer->size_n, layer->size_f);
     OPComm *opComm = layer->comm;
-    switch (MODE) {
+    TPW *tpw = layer->comm;
+    switch (layer->comm_type) {
         case 0:
             aggregate_csr(opComm, layer->input->mat, temp, FORWARD);
             break;
@@ -288,6 +289,8 @@ void gcn_forward(gcnLayer *layer, bool eval) {
             aggregate_gemm_overlap(opComm, layer->input->mat, temp, layer->weights, layer->output->mat, FORWARD);
             matrix_free(temp);
             return;
+        case 8:
+            aggregate_tp(tpw, layer->input->mat, temp, FORWARD, eval, layer->mask);
         default:
             printf("No aggregation mode exists.\n");
             printf("Modes exist for 1=>All-to-ALL blocking Cycle\n");
@@ -303,8 +306,8 @@ Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error) {
     Matrix *temp = matrix_create(layer->size_n, layer->size_output);
     Matrix *out = matrix_create(layer->size_n, layer->size_f);
     OPComm *opComm = layer->comm; // for case OP
-    TPW *tpw = (TPW *) opComm; // for case TP
-    switch (MODE) {
+    TPW *tpw = layer->comm; // for case TP
+    switch (layer->comm_type) {
         case 0:
             aggregate_csr(opComm, out_error, temp, BACKWARD);
             break;
@@ -330,7 +333,7 @@ Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error) {
             aggregate_partial_cco(opComm, out_error, temp, BACKWARD);
             break;
         case 8:
-            
+            aggregate_tp(tpw, out_error, temp, BACKWARD, false, layer->mask);
             break;
         default:
             printf("No aggregation mode exists.\n");

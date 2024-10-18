@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 project(MPI_GCN_CPU LANGUAGES C)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -std=c99 -O2 -Wno-unused-variable -Wno-unused-function -g -Werror")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 
 find_package(MPI REQUIRED)
 

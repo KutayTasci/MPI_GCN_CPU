@@ -219,9 +219,9 @@ bool printFreeMemory() {
     struct sysinfo sys_info;
     if (sysinfo(&sys_info) != 0) {
         perror("sysinfo");
-        return 1;
+        return 0;
     }
     unsigned long free_memory = sys_info.freeram * sys_info.mem_unit;
     printf("Free memory: %lu bytes\n", free_memory);
-    return 0;
+    return 1;
 }

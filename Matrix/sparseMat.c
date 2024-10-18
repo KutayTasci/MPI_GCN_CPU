@@ -1269,5 +1269,4 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
     }
 
     MPI_Waitall(comm->msgRecvCount_p2, comm->recv_ls_p2, MPI_STATUSES_IGNORE);
-
 }

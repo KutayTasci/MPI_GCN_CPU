@@ -10,6 +10,7 @@
 #include <string.h>
 #include <dirent.h>
 
+#define printf_r0(...) if (world_rank == 0) printf(__VA_ARGS__)
 
 void copyPath(const char *dir, char *file_name, char *dest) {
     strcpy(dest, dir);
@@ -45,7 +46,6 @@ void process_directory(const char *dir_path, char *adj_file, char *inpart, char 
     }
 }
 
-#define printf_r0(...) if (world_rank == 0) printf(__VA_ARGS__)
 
 void exit_safe() {
     MPI_Finalize();
@@ -64,6 +64,11 @@ args parseArgs(int argc, char **argv) {
         printf_r0("dataset_folder: must contain features.csv and labels.csv\n");
         exit_safe();
     }
+    // set inpart and adj file
+    ret.inpart[0] = '\0';
+    ret.adj_file[0] = '\0';
+    ret.inpart_T[0] = '\0';
+    ret.adj_T_file[0] = '\0';
 
     copyPath(argv[1], "features.csv", ret.features_file);
     copyPath(argv[1], "labels.csv", ret.labels_file);
@@ -108,6 +113,41 @@ args parseArgs(int argc, char **argv) {
             }
         }
     }
+    // print args
+    if (world_rank == 0) {
+        printf("MODE: %d\n", ret.comm_type);
+        printf("Epochs: %d\n", ret.n_epochs);
+        printf("Hidden size: %d\n", ret.hidden_size);
+        printf("Learning rate: %f\n", ret.lr);
+        printf("Dropout rate: %f\n", ret.dropout_rate);
+        printf("Inpart: %s\n", ret.inpart);
+        printf("Inpart_T: %s\n", ret.inpart_T);
+        printf("Adj file: %s\n", ret.adj_file);
+        printf("Adj_T file: %s\n", ret.adj_T_file);
+        printf("Features file: %s\n", ret.features_file);
+        printf("Labels file: %s\n", ret.labels_file);
+        printf("TP Comm file: %s\n", ret.tp_comm_file);
+    }
+
+    if (ret.comm_type == 8) {
+        if (ret.tp_comm_file[0] == '\0') {
+            printf_r0("TP aggregation mode selected but no tp_comm file found\n");
+            exit_safe();
+        }
+        if (!ret.symmetric && ret.tp_comm_file_T[0] == '\0') {
+            printf_r0("TP aggregation mode selected but no tp_comm file found for transpose\n");
+            exit_safe();
+        }
+    }
+    if (ret.inpart[0] == '\0' || ret.adj_file[0] == '\0') {
+        printf_r0("inpart or adj file not found\n");
+        exit_safe();
+    }
+    if (!ret.symmetric && (ret.inpart_T[0] == '\0' || ret.adj_T_file[0] == '\0')) {
+        printf_r0("inpart_T or adj_T file not found\n");
+        exit_safe();
+    }
+
     char *agg_info[] = {"Default Non-Overlapping CSR",
                         "Non-Overlapping CSR with with our datas structure",
                         "Overlapping CSR with with our datas structure",
@@ -122,16 +162,5 @@ args parseArgs(int argc, char **argv) {
     printf_r0("Processor Count:%d - Hidden_Parameter:%d\n", world_size, ret.hidden_size);
     printf_r0("Aggregation Mode: %s\n", agg_info[ret.comm_type]);
     printf_r0("--------------\n");
-
-    if (ret.comm_type == 8) {
-        if (ret.tp_comm_file[0] == '\0') {
-            printf_r0("TP aggregation mode selected but no tp_comm file found\n");
-            exit_safe();
-        }
-        if (!ret.symmetric && ret.tp_comm_file_T[0] == '\0') {
-            printf_r0("TP aggregation mode selected but no tp_comm file found for transpose\n");
-            exit_safe();
-        }
-    }
     return ret;
 }

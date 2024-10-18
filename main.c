@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "includes/fileio.h"
 #include "includes/typedef.h"
 #include "includes/basic.h"
@@ -24,6 +25,7 @@ int main(int argc, char **argv) {
 
     args arg = parseArgs(argc, argv);
 
+//    sleep(10); // to attach gdb
     SparseMat *A = readSparseMat(arg.adj_file, STORE_BY_ROWS, arg.inpart);
     SparseMat *A_T;
     if (arg.symmetric) {
@@ -40,26 +42,26 @@ int main(int argc, char **argv) {
     if (world_rank == 0) {
         if (!printFreeMemory()) exit(1);
     }
-    void *comm;
+    void *comm1, *comm2;
     if (arg.comm_type == TP) {
-        comm = initTPComm(A, A_T, X->gn, Y->gn, true, arg.tp_comm_file, arg.tp_comm_file_T);
+        comm1 = initTPComm(A, A_T, X->gn, arg.hidden_size, true, arg.tp_comm_file, arg.tp_comm_file_T);
+        comm2 = initTPComm(A, A_T, arg.hidden_size, Y->gn, true, arg.tp_comm_file, arg.tp_comm_file_T);
     } else {
-        comm = initOPComm(A, A_T, X->gn, Y->gn);
+        comm1 = initOPComm(A, A_T, X->gn, arg.hidden_size);
+        comm2 = initOPComm(A, A_T, arg.hidden_size, Y->gn);
     }
 
     double train_ratio = 0.8;
     bool *train_mask = masking_init(X->mat->m, train_ratio, 123);
-    layer_super *gcn_1 = layer_init_gcn(A, comm, arg.comm_type, X->gn, arg.hidden_size, train_mask);
+    layer_super *gcn_1 = layer_init_gcn(A, comm1, arg.comm_type, X->gn, arg.hidden_size, train_mask);
     layer_super *dropout_1 = layer_init_dropout(0.3);
     layer_super *act_1 = layer_init_activation(RELU);
-    layer_super *gcn_2 = layer_init_gcn(A, comm, arg.comm_type, arg.hidden_size, Y->gn, train_mask);
-    layer_super *dropout_2 = layer_init_dropout(0.5);
+    layer_super *gcn_2 = layer_init_gcn(A, comm2, arg.comm_type, arg.hidden_size, Y->gn, train_mask);
 
     net_addLayer(net, gcn_1);
     net_addLayer(net, dropout_1);
     net_addLayer(net, act_1);
     net_addLayer(net, gcn_2);
-//    net_addLayer(net, dropout_2);
 
     //for memory opt
 //    if (atoi(argv[2]) != 0) {
@@ -85,13 +87,11 @@ int main(int argc, char **argv) {
         t1 = MPI_Wtime();
 
         output = net_forward(net, X, false);
-
         Matrix *soft = matrix_softmax(output->mat);
         matrix_de_crossEntropy(soft, Y->mat, tempErr, train_mask);
 //        totalCrossEntropy(Y->mat, soft);
 
         net_backward(net, tempErr, 0.001, i);
-
         MPI_Barrier(MPI_COMM_WORLD);
         t2 = MPI_Wtime();
         matrix_free(soft);
@@ -110,10 +110,9 @@ int main(int argc, char **argv) {
         printf("Min runtime for current experiment=> %lf\n", min);
         printf("---------------------------------------------\n");
     }
-
     MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Finalize();
     // free memory
-    net_free(net);
+//    net_free(net);
+    MPI_Finalize();
     return 0;
 }

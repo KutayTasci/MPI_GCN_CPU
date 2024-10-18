@@ -37,5 +37,7 @@ void gcn_step(gcnLayer *layer, double lr, int t);
 
 void gcn_free(gcnLayer *layer);
 
+void initBias(gcnLayer *layer, double d);
+
 
 #endif // GCNLAYER_H_INCLUDED
