@@ -13,7 +13,8 @@
 
 void copyPath(const char *dir, char *file_name, char *dest) {
     strcpy(dest, dir);
-    strcat(dest, "/");
+    if (dest[strlen(dest) - 1] != '/')
+        strcat(dest, "/");
     strcat(dest, file_name);
 }
 
@@ -63,10 +64,9 @@ args parseArgs(int argc, char **argv) {
         printf_r0("dataset_folder: must contain features.csv and labels.csv\n");
         exit_safe();
     }
-    strcpy(ret.features_file, argv[1]);
-    strcat(ret.features_file, "/features.csv");
-    strcpy(ret.labels_file, argv[1]);
-    strcat(ret.labels_file, "/labels.csv");
+
+    copyPath(argv[1], "features.csv", ret.features_file);
+    copyPath(argv[1], "labels.csv", ret.labels_file);
 
     ret.n_threads = atoi(argv[3]);
     ret.n_epochs = atoi(argv[4]);
@@ -82,6 +82,7 @@ args parseArgs(int argc, char **argv) {
     ret.hidden_size = 64;
     ret.tp_comm_file[0] = '\0';
     ret.tp_comm_file_T[0] = '\0';
+    ret.lr = 0.01;
 
     for (int i = 6; i < argc; i++) {
         if (strcmp(argv[i], "-d") == 0) {
