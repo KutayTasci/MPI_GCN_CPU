@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <time.h>
 
-void aggregate_gemm_overlap(gcnLayer *layer, Matrix *X, Matrix *Y, Matrix *B, Matrix *C, int step) {
+void aggregate_gemm_overlap(OPComm *opComm, Matrix *X, Matrix *Y, Matrix *B, Matrix *C, int step) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -22,19 +22,19 @@ void aggregate_gemm_overlap(gcnLayer *layer, Matrix *X, Matrix *Y, Matrix *B, Ma
     int *buffMap;
     SparseMat *A;
     if (step == FORWARD) {
-        A = layer->adjacency_T;
-        bufferS = layer->sendBuffer;
-        bufferR = layer->recvBuffer;
-        buffMap = layer->adjacency_T->jc_mapped;
-        msgSendCount = layer->msgSendCount;
-        msgRecvCount = layer->msgRecvCount;
+        A = opComm->adjacency_T;
+        bufferS = opComm->sendBuffer;
+        bufferR = opComm->recvBuffer;
+        buffMap = opComm->adjacency_T->jc_mapped;
+        msgSendCount = opComm->msgSendCount;
+        msgRecvCount = opComm->msgRecvCount;
     } else if (step == BACKWARD) {
-        A = layer->adjacency;
-        bufferS = layer->sendBuffer_backward;
-        bufferR = layer->recvBuffer_backward;
-        buffMap = layer->adjacency->jc_mapped;
-        msgSendCount = layer->msgSendCount_b;
-        msgRecvCount = layer->msgRecvCount_b;
+        A = opComm->adjacency;
+        bufferS = opComm->sendBuffer_backward;
+        bufferR = opComm->recvBuffer_backward;
+        buffMap = opComm->adjacency->jc_mapped;
+        msgSendCount = opComm->msgSendCount_b;
+        msgRecvCount = opComm->msgRecvCount_b;
     } else {
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;
@@ -156,7 +156,7 @@ void aggregate_gemm_overlap(gcnLayer *layer, Matrix *X, Matrix *Y, Matrix *B, Ma
 
 }
 
-void aggregate(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
+void aggregate(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -169,19 +169,19 @@ void aggregate(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     SparseMat *A;
     //int* buffMap;
     if (step == FORWARD) {
-        A = layer->adjacency_T;
-        bufferS = layer->sendBuffer;
-        bufferR = layer->recvBuffer;
-        //buffMap = layer->adjacency_T->jc_mapped;
-        msgSendCount = layer->msgSendCount;
-        msgRecvCount = layer->msgRecvCount;
+        A = opComm->adjacency_T;
+        bufferS = opComm->sendBuffer;
+        bufferR = opComm->recvBuffer;
+        //buffMap = opComm->adjacency_T->jc_mapped;
+        msgSendCount = opComm->msgSendCount;
+        msgRecvCount = opComm->msgRecvCount;
     } else if (step == BACKWARD) {
-        A = layer->adjacency;
-        bufferS = layer->sendBuffer_backward;
-        bufferR = layer->recvBuffer_backward;
-        //buffMap = layer->adjacency->jc_mapped;
-        msgSendCount = layer->msgSendCount_b;
-        msgRecvCount = layer->msgRecvCount_b;
+        A = opComm->adjacency;
+        bufferS = opComm->sendBuffer_backward;
+        bufferR = opComm->recvBuffer_backward;
+        //buffMap = opComm->adjacency->jc_mapped;
+        msgSendCount = opComm->msgSendCount_b;
+        msgRecvCount = opComm->msgRecvCount_b;
     } else {
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;
@@ -282,7 +282,7 @@ void aggregate(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
 
 }
 
-void aggregate_csr(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
+void aggregate_csr(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -294,17 +294,17 @@ void aggregate_csr(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     int msgSendCount;
     int msgRecvCount;
     if (step == FORWARD) {
-        A = layer->adjacency_T;
-        bufferS = layer->sendBuffer;
-        bufferR = layer->recvBuffer;
-        msgSendCount = layer->msgSendCount;
-        msgRecvCount = layer->msgRecvCount;
+        A = opComm->adjacency_T;
+        bufferS = opComm->sendBuffer;
+        bufferR = opComm->recvBuffer;
+        msgSendCount = opComm->msgSendCount;
+        msgRecvCount = opComm->msgRecvCount;
     } else if (step == BACKWARD) {
-        A = layer->adjacency;
-        bufferS = layer->sendBuffer_backward;
-        bufferR = layer->recvBuffer_backward;
-        msgSendCount = layer->msgSendCount_b;
-        msgRecvCount = layer->msgRecvCount_b;
+        A = opComm->adjacency;
+        bufferS = opComm->sendBuffer_backward;
+        bufferR = opComm->recvBuffer_backward;
+        msgSendCount = opComm->msgSendCount_b;
+        msgRecvCount = opComm->msgRecvCount_b;
     } else {
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;
@@ -394,7 +394,7 @@ void aggregate_csr(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
 
 }
 
-void aggregate_partial_cco(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
+void aggregate_partial_cco(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -407,19 +407,19 @@ void aggregate_partial_cco(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     SparseMat *A;
     int *buffMap;
     if (step == FORWARD) {
-        A = layer->adjacency_T;
-        bufferS = layer->sendBuffer;
-        bufferR = layer->recvBuffer;
-        buffMap = layer->adjacency_T->jc_mapped;
-        msgSendCount = layer->msgSendCount;
-        msgRecvCount = layer->msgRecvCount;
+        A = opComm->adjacency_T;
+        bufferS = opComm->sendBuffer;
+        bufferR = opComm->recvBuffer;
+        buffMap = opComm->adjacency_T->jc_mapped;
+        msgSendCount = opComm->msgSendCount;
+        msgRecvCount = opComm->msgRecvCount;
     } else if (step == BACKWARD) {
-        A = layer->adjacency;
-        bufferS = layer->sendBuffer_backward;
-        bufferR = layer->recvBuffer_backward;
-        buffMap = layer->adjacency->jc_mapped;
-        msgSendCount = layer->msgSendCount_b;
-        msgRecvCount = layer->msgRecvCount_b;
+        A = opComm->adjacency;
+        bufferS = opComm->sendBuffer_backward;
+        bufferR = opComm->recvBuffer_backward;
+        buffMap = opComm->adjacency->jc_mapped;
+        msgSendCount = opComm->msgSendCount_b;
+        msgRecvCount = opComm->msgRecvCount_b;
     } else {
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;
@@ -510,7 +510,7 @@ void aggregate_partial_cco(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
 
 }
 
-void aggregate_cco(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
+void aggregate_cco(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
 
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -524,19 +524,19 @@ void aggregate_cco(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     SparseMat *A;
     int *buffMap;
     if (step == FORWARD) {
-        A = layer->adjacency_T;
-        bufferS = layer->sendBuffer;
-        bufferR = layer->recvBuffer;
-        buffMap = layer->adjacency_T->jc_mapped;
-        msgSendCount = layer->msgSendCount;
-        msgRecvCount = layer->msgRecvCount;
+        A = opComm->adjacency_T;
+        bufferS = opComm->sendBuffer;
+        bufferR = opComm->recvBuffer;
+        buffMap = opComm->adjacency_T->jc_mapped;
+        msgSendCount = opComm->msgSendCount;
+        msgRecvCount = opComm->msgRecvCount;
     } else if (step == BACKWARD) {
-        A = layer->adjacency;
-        bufferS = layer->sendBuffer_backward;
-        bufferR = layer->recvBuffer_backward;
-        buffMap = layer->adjacency->jc_mapped;
-        msgSendCount = layer->msgSendCount_b;
-        msgRecvCount = layer->msgRecvCount_b;
+        A = opComm->adjacency;
+        bufferS = opComm->sendBuffer_backward;
+        bufferR = opComm->recvBuffer_backward;
+        buffMap = opComm->adjacency->jc_mapped;
+        msgSendCount = opComm->msgSendCount_b;
+        msgRecvCount = opComm->msgRecvCount_b;
     } else {
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;
@@ -624,8 +624,8 @@ void aggregate_cco(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     //printf(" ---- Proc %d is finished ----\n", world_rank);
     MPI_Waitall(msgSendCount, request_send, MPI_STATUS_IGNORE);
 
-    //free(request_send);
-    //free(request_recv);
+    free(request_send);
+    free(request_recv);
 
 
     recvBufferSpaceFree(bufferR);
@@ -633,7 +633,7 @@ void aggregate_cco(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
 
 }
 
-void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step, bool eval) {
+void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool eval, bool *mask) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -646,19 +646,19 @@ void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step, bool eval) {
     SparseMat *A;
     int *buffMap;
     if (step == FORWARD) {
-        A = layer->adjacency_T;
-        bufferS = layer->sendBuffer;
-        bufferR = layer->recvBuffer;
-        buffMap = layer->adjacency_T->jc_mapped;
-        msgSendCount = layer->msgSendCount;
-        msgRecvCount = layer->msgRecvCount;
+        A = opComm->adjacency_T;
+        bufferS = opComm->sendBuffer;
+        bufferR = opComm->recvBuffer;
+        buffMap = opComm->adjacency_T->jc_mapped;
+        msgSendCount = opComm->msgSendCount;
+        msgRecvCount = opComm->msgRecvCount;
     } else if (step == BACKWARD) {
-        A = layer->adjacency;
-        bufferS = layer->sendBuffer_backward;
-        bufferR = layer->recvBuffer_backward;
-        buffMap = layer->adjacency->jc_mapped;
-        msgSendCount = layer->msgSendCount_b;
-        msgRecvCount = layer->msgRecvCount_b;
+        A = opComm->adjacency;
+        bufferS = opComm->sendBuffer_backward;
+        bufferR = opComm->recvBuffer_backward;
+        buffMap = opComm->adjacency->jc_mapped;
+        msgSendCount = opComm->msgSendCount_b;
+        msgRecvCount = opComm->msgRecvCount_b;
     } else {
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;
@@ -697,7 +697,7 @@ void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step, bool eval) {
         base = bufferS->pid_map[k];
         for (j = 0; j < range; j++) {
             ind = bufferS->vertices_local[base + j];
-            bool mask_factor = layer->mask[ind] ^ eval;
+            bool mask_factor = mask[ind] ^ eval;
 //            memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
             if (mask_factor) {
                 memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
@@ -754,7 +754,7 @@ void aggregate_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step, bool eval) {
     sendBufferSpaceFree(bufferS);
 }
 
-void aggregate_cco_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
+void aggregate_cco_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -767,19 +767,19 @@ void aggregate_cco_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     SparseMat *A;
     int *buffMap;
     if (step == FORWARD) {
-        A = layer->adjacency_T;
-        bufferS = layer->sendBuffer;
-        bufferR = layer->recvBuffer;
-        buffMap = layer->adjacency_T->jc_mapped;
-        msgSendCount = layer->msgSendCount;
-        msgRecvCount = layer->msgRecvCount;
+        A = opComm->adjacency_T;
+        bufferS = opComm->sendBuffer;
+        bufferR = opComm->recvBuffer;
+        buffMap = opComm->adjacency_T->jc_mapped;
+        msgSendCount = opComm->msgSendCount;
+        msgRecvCount = opComm->msgRecvCount;
     } else if (step == BACKWARD) {
-        A = layer->adjacency;
-        bufferS = layer->sendBuffer_backward;
-        bufferR = layer->recvBuffer_backward;
-        buffMap = layer->adjacency->jc_mapped;
-        msgSendCount = layer->msgSendCount_b;
-        msgRecvCount = layer->msgRecvCount_b;
+        A = opComm->adjacency;
+        bufferS = opComm->sendBuffer_backward;
+        bufferR = opComm->recvBuffer_backward;
+        buffMap = opComm->adjacency->jc_mapped;
+        msgSendCount = opComm->msgSendCount_b;
+        msgRecvCount = opComm->msgRecvCount_b;
     } else {
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;
@@ -875,7 +875,7 @@ void aggregate_cco_csc(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     sendBufferSpaceFree(bufferS);
 }
 
-void aggregate_cco_hybrid(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
+void aggregate_cco_hybrid(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -888,19 +888,19 @@ void aggregate_cco_hybrid(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     SparseMat *A;
     int *buffMap;
     if (step == FORWARD) {
-        A = layer->adjacency_T;
-        bufferS = layer->sendBuffer;
-        bufferR = layer->recvBuffer;
-        buffMap = layer->adjacency_T->jc_mapped;
-        msgSendCount = layer->msgSendCount;
-        msgRecvCount = layer->msgRecvCount;
+        A = opComm->adjacency_T;
+        bufferS = opComm->sendBuffer;
+        bufferR = opComm->recvBuffer;
+        buffMap = opComm->adjacency_T->jc_mapped;
+        msgSendCount = opComm->msgSendCount;
+        msgRecvCount = opComm->msgRecvCount;
     } else if (step == BACKWARD) {
-        A = layer->adjacency;
-        bufferS = layer->sendBuffer_backward;
-        bufferR = layer->recvBuffer_backward;
-        buffMap = layer->adjacency->jc_mapped;
-        msgSendCount = layer->msgSendCount_b;
-        msgRecvCount = layer->msgRecvCount_b;
+        A = opComm->adjacency;
+        bufferS = opComm->sendBuffer_backward;
+        bufferR = opComm->recvBuffer_backward;
+        buffMap = opComm->adjacency->jc_mapped;
+        msgSendCount = opComm->msgSendCount_b;
+        msgRecvCount = opComm->msgRecvCount_b;
     } else {
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;
@@ -1007,7 +1007,7 @@ void aggregate_cco_hybrid(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
 
 }
 
-void aggregate_no_comp(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
+void aggregate_no_comp(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -1020,19 +1020,19 @@ void aggregate_no_comp(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     //SparseMat* A;
     //int* buffMap;
     if (step == FORWARD) {
-        //A = layer->adjacency_T;
-        bufferS = layer->sendBuffer;
-        bufferR = layer->recvBuffer;
-        //buffMap = layer->adjacency_T->jc_mapped;
-        msgSendCount = layer->msgSendCount;
-        msgRecvCount = layer->msgRecvCount;
+        //A = opComm->adjacency_T;
+        bufferS = opComm->sendBuffer;
+        bufferR = opComm->recvBuffer;
+        //buffMap = opComm->adjacency_T->jc_mapped;
+        msgSendCount = opComm->msgSendCount;
+        msgRecvCount = opComm->msgRecvCount;
     } else if (step == BACKWARD) {
-        //A = layer->adjacency;
-        bufferS = layer->sendBuffer_backward;
-        bufferR = layer->recvBuffer_backward;
-        //buffMap = layer->adjacency->jc_mapped;
-        msgSendCount = layer->msgSendCount_b;
-        msgRecvCount = layer->msgRecvCount_b;
+        //A = opComm->adjacency;
+        bufferS = opComm->sendBuffer_backward;
+        bufferR = opComm->recvBuffer_backward;
+        //buffMap = opComm->adjacency->jc_mapped;
+        msgSendCount = opComm->msgSendCount_b;
+        msgRecvCount = opComm->msgRecvCount_b;
     } else {
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;
@@ -1098,7 +1098,7 @@ void aggregate_no_comp(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
 
 }
 
-void aggregate_no_comm(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
+void aggregate_no_comm(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -1111,19 +1111,19 @@ void aggregate_no_comm(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
     SparseMat *A;
     //int* buffMap;
     if (step == FORWARD) {
-        A = layer->adjacency_T;
-        bufferS = layer->sendBuffer;
-        bufferR = layer->recvBuffer;
-        //buffMap = layer->adjacency_T->jc_mapped;
-        msgSendCount = layer->msgSendCount;
-        msgRecvCount = layer->msgRecvCount;
+        A = opComm->adjacency_T;
+        bufferS = opComm->sendBuffer;
+        bufferR = opComm->recvBuffer;
+        //buffMap = opComm->adjacency_T->jc_mapped;
+        msgSendCount = opComm->msgSendCount;
+        msgRecvCount = opComm->msgRecvCount;
     } else if (step == BACKWARD) {
-        A = layer->adjacency;
-        bufferS = layer->sendBuffer_backward;
-        bufferR = layer->recvBuffer_backward;
-        //buffMap = layer->adjacency->jc_mapped;
-        msgSendCount = layer->msgSendCount_b;
-        msgRecvCount = layer->msgRecvCount_b;
+        A = opComm->adjacency;
+        bufferS = opComm->sendBuffer_backward;
+        bufferR = opComm->recvBuffer_backward;
+        //buffMap = opComm->adjacency->jc_mapped;
+        msgSendCount = opComm->msgSendCount_b;
+        msgRecvCount = opComm->msgRecvCount_b;
     } else {
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;
@@ -1193,3 +1193,81 @@ void aggregate_no_comm(gcnLayer *layer, Matrix *X, Matrix *Y, int step) {
 }
 
 
+void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mask) {
+    int world_size, world_rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    TP_Comm *comm = step == FORWARD ? &tpw->tpComm : &tpw->tpComm_backward;
+    int i, j, k;
+    int ind, ind_c;
+    int range;
+    int base, part;
+    MPI_Startall(comm->msgRecvCount_p1, comm->recv_ls_p1);
+    MPI_Startall(comm->msgRecvCount_p2, comm->recv_ls_p2);
+    int idx, vtx, tmp;
+    SparseMat *A = comm->A;
+    for (i = 0; i < comm->reducer.lcl_count; i++) {
+        idx = comm->reducer.reduce_local[i];
+        vtx = comm->reducer.reduce_list_mapped[idx];
+        //This loop can be handles outside of spmm
+        for (k = 0; k < Y->n; k++) {
+            X->entries[vtx][k] = 0;
+        }
+        for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
+            tmp = comm->reducer.reduce_source_mapped[idx][j];
+            for (k = 0; k < Y->n; k++) {
+                X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k];
+            }
+        }
+    }
+    for (i = 0; i < comm->msgSendCount_p1; i++) {
+        part = comm->send_proc_list_p1[i];
+        range = comm->sendBuffer_p1.proc_map[part + 1] - comm->sendBuffer_p1.proc_map[part];
+        base = comm->sendBuffer_p1.proc_map[part];
+        for (j = 0; j < range; j++) {
+            ind = comm->sendBuffer_p1.row_map_lcl[base + j];
+            memcpy(comm->sendBuffer_p1.buffer[base + j], X->entries[ind], sizeof(double) * X->n);
+        }
+        MPI_Rsend(&(comm->sendBuffer_p1.buffer[base][0]),
+                  range * X->n,
+                  MPI_DOUBLE,
+                  part,
+                  0,
+                  MPI_COMM_WORLD);
+        //&(Comm->send_ls_p2[i]));
+    }
+    MPI_Waitall(comm->msgRecvCount_p1, comm->recv_ls_p1, MPI_STATUSES_IGNORE);
+    for (i = 0; i < comm->reducer.nlcl_count; i++) {
+        idx = comm->reducer.reduce_nonlocal[i];
+        vtx = comm->reducer.reduce_list_mapped[idx];
+        for (k = 0; k < Y->n; k++) {
+            X->entries[vtx][k] = 0;
+        }
+        for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
+            tmp = comm->reducer.reduce_source_mapped[idx][j];
+            for (k = 0; k < Y->n; k++) {
+                X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k];
+            }
+        }
+    }
+    for (i = 0; i < comm->msgSendCount_p2; i++) {
+        part = comm->send_proc_list_p2[i];
+        range = comm->sendBuffer_p2.proc_map[part + 1] - comm->sendBuffer_p2.proc_map[part];
+        base = comm->sendBuffer_p2.proc_map[part];
+
+        for (j = 0; j < range; j++) {
+            ind = comm->sendBuffer_p2.row_map_lcl[base + j];
+            memcpy(comm->sendBuffer_p2.buffer[base + j], X->entries[ind], sizeof(double) * X->n);
+        }
+        MPI_Rsend(&(comm->sendBuffer_p2.buffer[base][0]),
+                  range * X->n,
+                  MPI_DOUBLE,
+                  part,
+                  1,
+                  MPI_COMM_WORLD);
+        //&(Comm->send_ls_p2[i]));
+    }
+
+    MPI_Waitall(comm->msgRecvCount_p2, comm->recv_ls_p2, MPI_STATUSES_IGNORE);
+
+}

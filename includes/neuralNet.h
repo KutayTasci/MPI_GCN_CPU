@@ -31,7 +31,7 @@ layer_super *layer_init(enum layer_type);
 
 layer_super *layer_init_activation(enum activation_type type);
 
-layer_super *layer_init_gcn(SparseMat *adj, SparseMat *adj_T, int size_f, int size_out, bool *mask);
+layer_super *layer_init_gcn(SparseMat *adj, void *comm, CommType comm_type, int size_f, int size_out, bool *mask);
 
 layer_super *layer_init_dropout(double dropout_rate);
 

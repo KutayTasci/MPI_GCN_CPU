@@ -23,6 +23,10 @@ add_executable(MPI_GCN_CPU
         NeuralNet/optimizer.c
         includes/masking.h
         NeuralNet/masking.c
+        src/comm.c
+        includes/comm.h
+        src/argParse.c
+        includes/argParse.h
 )
 
 target_link_libraries(MPI_GCN_CPU m)
