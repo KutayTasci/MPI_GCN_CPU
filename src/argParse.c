@@ -39,7 +39,8 @@ void process_directory(const char *dir_path, char *adj_file, char *inpart, char 
                     copyPath(dir_path, ent->d_name, inpart);
                 }
             } else if (strstr(ent->d_name, ".phases") != NULL) {
-                copyPath(dir_path, ent->d_name, tp_comm_file);
+                if (strstr(ent->d_name, ".one") == NULL) // ignore one phase file
+                    copyPath(dir_path, ent->d_name, tp_comm_file);
             }
         }
         closedir(dir);
