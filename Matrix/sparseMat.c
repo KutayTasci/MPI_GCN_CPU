@@ -1209,7 +1209,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
     for (i = 0; i < comm->reducer.lcl_count; i++) {
         idx = comm->reducer.reduce_local[i];
         vtx = comm->reducer.reduce_list_mapped[idx];
-        //This loop can be handles outside of spmm
+        //This loop can be handled outside of spmm
         for (k = 0; k < Y->n; k++) {
             X->entries[vtx][k] = 0;
         }

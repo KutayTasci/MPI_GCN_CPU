@@ -6,8 +6,23 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <time.h>
 #include "../includes/comm.h"
 #include "../includes/basic.h"
+
+// used to send messages in random order
+void shuffle(int array[], int n) {
+    srand(time(NULL)); // Seed the random number generator
+    for (int i = n - 1; i > 0; i--) {
+        // Generate a random index j such that 0 <= j <= i
+        int j = rand() % (i + 1);
+
+        // Swap array[i] and array[j]
+        int temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+}
 
 OPComm *initOPComm(SparseMat *adj, SparseMat *adj_T, int size_f, int size_out) {
     int world_rank, world_size;
@@ -205,8 +220,8 @@ OPComm *initOPComm(SparseMat *adj, SparseMat *adj_T, int size_f, int size_out) {
     return comm;
 }
 
-TPW *initTPComm(SparseMat *adjacency, SparseMat *adjacency_T, int size_f, int size_out, bool preduce, char *comm_file,
-                char *comm_file_T) {
+TPW *initTPComm(SparseMat *adjacency, SparseMat *adjacency_T, int size_f, int size_out, bool preduce,
+                char *comm_file, char *comm_file_T) {
     int world_rank, world_size;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -216,7 +231,14 @@ TPW *initTPComm(SparseMat *adjacency, SparseMat *adjacency_T, int size_f, int si
     readTPComm(comm_file_T, size_out, preduce, &(comm->tpComm_backward));
     map_csr(adjacency, &(comm->tpComm));
     map_csr(adjacency_T, &(comm->tpComm_backward));
+    prep_comm_tp(&(comm->tpComm));
+    prep_comm_tp(&(comm->tpComm_backward));
     return comm;
+}
+
+void bind_recv_buffers(Matrix *X, TPW *comm) {
+    map_comm_tp(&(comm->tpComm), X);
+    map_comm_tp(&(comm->tpComm_backward), X);
 }
 
 void readTPComm(char *fName, int f, bool partial_reduce, TP_Comm *Comm) {
@@ -432,4 +454,91 @@ void map_csr(SparseMat *A, TP_Comm *comm) {
     }
     free(global_map);
     comm->A = A;
+}
+
+void prep_comm_tp(TP_Comm *Comm) {
+    int world_size, world_rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    int i;
+    int base, range, part;
+    int *send_ls1 = (int *) malloc(Comm->msgSendCount_p1 * sizeof(int));
+    int *recv_ls1 = (int *) malloc(Comm->msgRecvCount_p1 * sizeof(int));
+    int *send_ls2 = (int *) malloc(Comm->msgSendCount_p2 * sizeof(int));
+    int *recv_ls2 = (int *) malloc(Comm->msgRecvCount_p2 * sizeof(int));
+
+    int ctr = 0, ctrp = 0;
+    for (int i = 0; i < world_size; ++i) {
+        if (Comm->sendBuffer_p1.proc_map[i + 1] - Comm->sendBuffer_p1.proc_map[i] != 0) {
+            send_ls1[ctr] = i;
+            ctr++;
+        }
+
+
+        if (Comm->recvBuffer_p1.proc_map[i + 1] - Comm->recvBuffer_p1.proc_map[i] != 0) {
+            recv_ls1[ctrp] = i;
+            ctrp++;
+        }
+    }
+    ctr = 0, ctrp = 0;
+    for (int i = 0; i < world_size; ++i) {
+        if (Comm->sendBuffer_p2.proc_map[i + 1] - Comm->sendBuffer_p2.proc_map[i] != 0) {
+            send_ls2[ctr] = i;
+            ctr++;
+        }
+
+
+        if (Comm->recvBuffer_p2.proc_map[i + 1] - Comm->recvBuffer_p2.proc_map[i] != 0) {
+            recv_ls2[ctrp] = i;
+            ctrp++;
+        }
+    }
+
+    shuffle(send_ls1, Comm->msgSendCount_p1);
+    Comm->send_proc_list_p1 = send_ls1;
+    Comm->recv_proc_list_p1 = recv_ls1;
+    shuffle(send_ls2, Comm->msgSendCount_p2);
+    Comm->send_proc_list_p2 = send_ls2;
+    Comm->recv_proc_list_p2 = recv_ls2;
+
+    Comm->send_ls_p1 = (MPI_Request *) malloc((Comm->msgSendCount_p1) * sizeof(MPI_Request));
+    Comm->recv_ls_p1 = (MPI_Request *) malloc((Comm->msgRecvCount_p1) * sizeof(MPI_Request));
+    Comm->send_ls_p2 = (MPI_Request *) malloc((Comm->msgSendCount_p2) * sizeof(MPI_Request));
+    Comm->recv_ls_p2 = (MPI_Request *) malloc((Comm->msgRecvCount_p2) * sizeof(MPI_Request));
+}
+
+// maps receive buffers to the matrix
+void map_comm_tp(TP_Comm *Comm, Matrix *B) {
+
+    int i;
+    int base, range, part;
+    for (i = 0; i < Comm->msgRecvCount_p1; i++) {
+        part = Comm->recv_proc_list_p1[i];
+        range = Comm->recvBuffer_p1.proc_map[part + 1] - Comm->recvBuffer_p1.proc_map[part];
+        base = B->phase_1 + Comm->recvBuffer_p1.proc_map[part];
+
+        MPI_Recv_init(&(B->entries[base][0]),
+                      range * B->n,
+                      MPI_DOUBLE,
+                      part,
+                      0,
+                      MPI_COMM_WORLD,
+                      &(Comm->recv_ls_p1[i]));
+    }
+
+
+    for (i = 0; i < Comm->msgRecvCount_p2; i++) {
+        part = Comm->recv_proc_list_p2[i];
+        range = Comm->recvBuffer_p2.proc_map[part + 1] - Comm->recvBuffer_p2.proc_map[part];
+        base = B->phase_2 + Comm->recvBuffer_p2.proc_map[part];
+
+        MPI_Recv_init(&(B->entries[base][0]),
+                      range * B->n,
+                      MPI_DOUBLE,
+                      part,
+                      1,
+                      MPI_COMM_WORLD,
+                      &(Comm->recv_ls_p2[i]));
+    }
+
 }

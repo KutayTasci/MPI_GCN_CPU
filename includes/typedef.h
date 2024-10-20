@@ -48,6 +48,7 @@ typedef struct {
     double **entries;
     int m;
     int n;
+    int phase_1, phase_2; // used in tp communication
 } Matrix;
 
 typedef struct {

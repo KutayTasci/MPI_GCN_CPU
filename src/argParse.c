@@ -29,16 +29,16 @@ void process_directory(const char *dir_path, char *adj_file, char *inpart, char 
     if (dir) {
         struct dirent *ent;
         while ((ent = readdir(dir)) != NULL) {
-            if (strstr(ent->d_name, "inpart") != NULL) {
-                bool wrong_file = reduced ^ checkReduced(ent->d_name);
-                if (wrong_file) continue;
+            bool wrong_file = reduced ^ checkReduced(ent->d_name);
+            if (wrong_file) continue;
+            if (strstr(ent->d_name, ".inpart") != NULL) {
                 // if ends with .bin
                 if (strstr(ent->d_name, ".bin") != NULL) {
                     copyPath(dir_path, ent->d_name, adj_file);
                 } else {
                     copyPath(dir_path, ent->d_name, inpart);
                 }
-            } else if (strstr(ent->d_name, ".phase") != NULL) {
+            } else if (strstr(ent->d_name, ".phases") != NULL) {
                 copyPath(dir_path, ent->d_name, tp_comm_file);
             }
         }
@@ -69,6 +69,8 @@ args parseArgs(int argc, char **argv) {
     ret.adj_file[0] = '\0';
     ret.inpart_T[0] = '\0';
     ret.adj_T_file[0] = '\0';
+    ret.tp_comm_file[0] = '\0';
+    ret.tp_comm_file_T[0] = '\0';
 
     copyPath(argv[1], "features.csv", ret.features_file);
     copyPath(argv[1], "labels.csv", ret.labels_file);
@@ -80,15 +82,13 @@ args parseArgs(int argc, char **argv) {
         printf_r0("Invalid aggregation mode. Must be between 0 and 8\n");
         exit_safe();
     }
-    process_directory(argv[2], ret.adj_file, ret.inpart, ret.tp_comm_file, ret.comm_type);
     // set defaults
     ret.dropout_rate = 0.5;
     ret.symmetric = true;
     ret.hidden_size = 64;
-    ret.tp_comm_file[0] = '\0';
-    ret.tp_comm_file_T[0] = '\0';
     ret.lr = 0.01;
 
+    process_directory(argv[2], ret.adj_file, ret.inpart, ret.tp_comm_file, ret.comm_type);
     for (int i = 6; i < argc; i++) {
         if (strcmp(argv[i], "-d") == 0) {
             ret.dropout_rate = atof(argv[i + 1]);
@@ -146,6 +146,9 @@ args parseArgs(int argc, char **argv) {
     if (!ret.symmetric && (ret.inpart_T[0] == '\0' || ret.adj_T_file[0] == '\0')) {
         printf_r0("inpart_T or adj_T file not found\n");
         exit_safe();
+    }
+    if (ret.symmetric) {
+        strcpy(ret.tp_comm_file_T, ret.tp_comm_file);
     }
 
     char *agg_info[] = {"Default Non-Overlapping CSR",

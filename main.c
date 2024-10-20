@@ -35,7 +35,6 @@ int main(int argc, char **argv) {
     }
     ParMatrix *X = readDenseMat(arg.features_file, A);
     ParMatrix *Y = readDenseMat(arg.labels_file, A);
-
     neural_net *net = net_init(10);
 
     MPI_Barrier(MPI_COMM_WORLD);
