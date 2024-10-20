@@ -40,16 +40,18 @@ int main(int argc, char **argv) {
     MPI_Barrier(MPI_COMM_WORLD);
     if (world_rank == 0) {
         if (!printFreeMemory()) exit(1);
+        printf("Total rows, local rows: %d %d\n", X->mat->total_m, X->mat->m);
     }
     void *comm1, *comm2;
     if (arg.comm_type == TP) {
         comm1 = initTPComm(A, A_T, X->gn, arg.hidden_size, true, arg.tp_comm_file, arg.tp_comm_file_T);
         comm2 = initTPComm(A, A_T, arg.hidden_size, Y->gn, true, arg.tp_comm_file, arg.tp_comm_file_T);
+        bind_recv_buffers(X->mat, comm1);
+        bind_recv_buffers(X->mat, comm2);
     } else {
         comm1 = initOPComm(A, A_T, X->gn, arg.hidden_size);
         comm2 = initOPComm(A, A_T, arg.hidden_size, Y->gn);
     }
-
     double train_ratio = 0.8;
     bool *train_mask = masking_init(X->mat->m, train_ratio, 123);
     layer_super *gcn_1 = layer_init_gcn(A, comm1, arg.comm_type, X->gn, arg.hidden_size, train_mask);

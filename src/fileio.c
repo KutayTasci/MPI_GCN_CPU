@@ -43,13 +43,13 @@ SparseMat *readSparseMat(char *fName, int partScheme, char *inPartFile) {
         A->inPart = malloc(sizeof(*(A->inPart)) * A->gn);
         A->l2gMap = malloc(sizeof(int) * A->m);
 
-//        FILE *pf = fopen(inPartFile, "rb");
-//        fread(A->inPart, sizeof(int), A->gn, pf);
-//        fclose(pf);
-        FILE *pf = fopen(inPartFile, "r");
-        for (int i = 0; i < A->gn; ++i)
-            fscanf(pf, "%d", &(A->inPart[i]));
+        FILE *pf = fopen(inPartFile, "rb");
+        fread(A->inPart, sizeof(int), A->gn, pf);
         fclose(pf);
+//        FILE *pf = fopen(inPartFile, "r");
+//        for (int i = 0; i < A->gn; ++i)
+//            fscanf(pf, "%d", &(A->inPart[i]));
+//        fclose(pf);
         int ctr = 0;
         for (int i = 0; i < A->gn; ++i) {
             if (A->inPart[i] == world_rank) {
@@ -122,6 +122,8 @@ ParMatrix *readDenseMat(char *fName, SparseMat *A) {
         }
 
     }
+    X->mat->total_m = X->mat->m;
+    X->mat->m = r_ctr;
     fclose(file);
     return X;
 }

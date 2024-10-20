@@ -46,9 +46,9 @@ typedef struct {
 
 typedef struct {
     double **entries;
-    int m;
+    int m; // excludes artificial rows used in communication
     int n;
-    int phase_1, phase_2; // used in tp communication
+    int total_m;
 } Matrix;
 
 typedef struct {
