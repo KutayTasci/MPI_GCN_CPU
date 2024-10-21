@@ -45,4 +45,8 @@ void net_free(neural_net *net);
 
 void layer_free(layer_super *layer);
 
+void net_prepare(neural_net *net, ParMatrix *input);
+
+gcnLayer *isNextGCN(neural_net *net, int i);
+
 #endif // NEURALNET_H_INCLUDED

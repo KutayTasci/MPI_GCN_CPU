@@ -53,6 +53,15 @@ void exit_safe() {
     exit(0);
 }
 
+bool checkPathExists(const char *path) {
+    FILE *file = fopen(path, "r");
+    if (file) {
+        fclose(file);
+        return true;
+    }
+    return false;
+}
+
 args parseArgs(int argc, char **argv) {
     int world_rank, world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -75,6 +84,14 @@ args parseArgs(int argc, char **argv) {
 
     copyPath(argv[1], "features.csv", ret.features_file);
     copyPath(argv[1], "labels.csv", ret.labels_file);
+    if (!checkPathExists(ret.features_file) || !checkPathExists(ret.labels_file)) {
+        copyPath(argv[1], "features.bin", ret.features_file);
+        copyPath(argv[1], "labels.bin", ret.labels_file);
+        if (!checkPathExists(ret.features_file) || !checkPathExists(ret.labels_file)) {
+            printf_r0("features.csv/.bin or labels.csv/.bin not found\n");
+            exit_safe();
+        }
+    }
 
     ret.n_threads = atoi(argv[3]);
     ret.n_epochs = atoi(argv[4]);

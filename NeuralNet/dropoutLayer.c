@@ -11,16 +11,10 @@ dropoutLayer *dropout_init(double dropout_rate) {
     layer->dropout_rate = dropout_rate;
     layer->input = NULL;
     layer->output = NULL;
-    layer->init = false;
     return layer;
 }
 
 void dropout_forward(dropoutLayer *layer) {
-    if (!layer->init) {
-        layer->output = create_output_matrix(layer->input);
-        layer->mask = (bool *) malloc(sizeof(bool) * layer->input->mat->m * layer->input->mat->n);
-        layer->init = true;
-    }
     for (int i = 0; i < layer->input->mat->m; i++) {
         for (int j = 0; j < layer->input->mat->n; j++) {
             bool mask = uniform_distribution(0, 1) < layer->dropout_rate;

@@ -7,7 +7,7 @@
 
 
 typedef struct {
-    int size_n;
+    int size_m;
     int size_f;
     int size_output;
     ParMatrix *input;
@@ -39,5 +39,6 @@ void gcn_free(gcnLayer *layer);
 
 void initBias(gcnLayer *layer, double d);
 
+ParMatrix *create_gcn_output_matrix(ParMatrix *X, gcnLayer *gcn_layer, bool is_input);
 
 #endif // GCNLAYER_H_INCLUDED

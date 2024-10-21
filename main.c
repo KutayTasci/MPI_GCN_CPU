@@ -11,6 +11,7 @@
 #include "includes/sparseMat.h"
 #include "includes/masking.h"
 #include "includes/argParse.h"
+#include "includes/lossFunctions.h"
 
 
 //CMD args dataset  MODE epoch
@@ -33,24 +34,21 @@ int main(int argc, char **argv) {
     } else {
         A_T = readSparseMat(arg.adj_T_file, STORE_BY_ROWS, arg.inpart_T);
     }
-    ParMatrix *X = readDenseMat(arg.features_file, A);
-    ParMatrix *Y = readDenseMat(arg.labels_file, A);
+    int feature_size = readFeatureSize(arg.features_file);
+    int output_size = readFeatureSize(arg.labels_file);
     neural_net *net = net_init(10);
-
+    ParMatrix *X, *Y = readDenseMat(arg.labels_file, A, 0);
     MPI_Barrier(MPI_COMM_WORLD);
-    if (world_rank == 0) {
-        if (!printFreeMemory()) exit(1);
-        printf("Total rows, local rows: %d %d\n", X->mat->total_m, X->mat->m);
-    }
     void *comm1, *comm2;
     if (arg.comm_type == TP) {
-        comm1 = initTPComm(A, A_T, X->gn, arg.hidden_size, true, arg.tp_comm_file, arg.tp_comm_file_T);
-        comm2 = initTPComm(A, A_T, arg.hidden_size, Y->gn, true, arg.tp_comm_file, arg.tp_comm_file_T);
-        bind_recv_buffers(X->mat, comm1);
-        bind_recv_buffers(X->mat, comm2);
+        comm1 = initTPComm(A, A_T, feature_size, arg.hidden_size, true, arg.tp_comm_file, arg.tp_comm_file_T);
+        comm2 = initTPComm(A, A_T, arg.hidden_size, output_size, true, arg.tp_comm_file, arg.tp_comm_file_T);
+        int buffer_size = get_comm_buffer_space(comm1);
+        X = readDenseMat(arg.features_file, A, buffer_size);
     } else {
-        comm1 = initOPComm(A, A_T, X->gn, arg.hidden_size);
-        comm2 = initOPComm(A, A_T, arg.hidden_size, Y->gn);
+        X = readDenseMat(arg.features_file, A, 0);
+        comm1 = initOPComm(A, A_T, feature_size, arg.hidden_size);
+        comm2 = initOPComm(A, A_T, arg.hidden_size, output_size);
     }
     double train_ratio = 0.8;
     bool *train_mask = masking_init(X->mat->m, train_ratio, 123);
@@ -64,13 +62,8 @@ int main(int argc, char **argv) {
     net_addLayer(net, act_1);
     net_addLayer(net, gcn_2);
 
-    //for memory opt
-//    if (atoi(argv[2]) != 0) {
-//        free(A_T->val);
-//        free(A_T->ia);
-//        free(A_T->ja);
-//        free(A_T->ja_mapped);
-//    }
+    net_prepare(net, X);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     if (world_rank == 0) {
         printf("model generated\n");
@@ -83,14 +76,14 @@ int main(int argc, char **argv) {
     double tot = 0;
     double min = 99999;
     for (int i = 0; i < arg.n_epochs; i++) {
-        Matrix *tempErr = matrix_create(Y->mat->m, Y->gn);
+        Matrix *tempErr = matrix_create(Y->mat->m, Y->gn, X->mat->total_m - X->mat->m);
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
 
         output = net_forward(net, X, false);
         Matrix *soft = matrix_softmax(output->mat);
         matrix_de_crossEntropy(soft, Y->mat, tempErr, train_mask);
-//        totalCrossEntropy(Y->mat, soft);
+        totalCrossEntropy(Y->mat, soft);
 
         net_backward(net, tempErr, 0.001, i);
         MPI_Barrier(MPI_COMM_WORLD);

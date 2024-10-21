@@ -236,10 +236,6 @@ TPW *initTPComm(SparseMat *adjacency, SparseMat *adjacency_T, int size_f, int si
     return comm;
 }
 
-void bind_recv_buffers(Matrix *X, TPW *comm) {
-    map_comm_tp(&(comm->tpComm), X);
-    map_comm_tp(&(comm->tpComm_backward), X);
-}
 
 void readTPComm(char *fName, int f, bool partial_reduce, TP_Comm *Comm) {
     int world_size, world_rank;
@@ -508,10 +504,6 @@ void prep_comm_tp(TP_Comm *Comm) {
 }
 
 void map_comm_tp(TP_Comm *Comm, Matrix *B) {
-    // fixing matrix dimensions
-    B->total_m = B->m;
-    B->m = B->m - Comm->recvBuffer_p1.count - Comm->recvBuffer_p2.count;
-
     int i;
     int base, range, part;
     for (i = 0; i < Comm->msgRecvCount_p1; i++) {
@@ -543,4 +535,12 @@ void map_comm_tp(TP_Comm *Comm, Matrix *B) {
                       &(Comm->recv_ls_p2[i]));
     }
 
+}
+
+int get_buffer_space(TPW *comm) {
+    return comm->tpComm.recvBuffer_p1.count + comm->tpComm.recvBuffer_p2.count + comm->tpComm.reducer.reduce_count;
+}
+
+int get_comm_buffer_space(TPW *comm) {
+    return comm->tpComm.recvBuffer_p1.count + comm->tpComm.recvBuffer_p2.count;
 }

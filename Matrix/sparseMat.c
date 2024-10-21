@@ -1199,22 +1199,24 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     TP_Comm *comm = step == FORWARD ? &tpw->tpComm : &tpw->tpComm_backward;
     int i, j, k;
-    int ind, ind_c;
+    int ind;
     int range;
     int base, part;
     MPI_Startall(comm->msgRecvCount_p1, comm->recv_ls_p1);
     MPI_Startall(comm->msgRecvCount_p2, comm->recv_ls_p2);
     int idx, vtx, tmp;
-    SparseMat *A = comm->A;
     for (i = 0; i < comm->reducer.lcl_count; i++) {
         idx = comm->reducer.reduce_local[i];
         vtx = comm->reducer.reduce_list_mapped[idx];
+        if (vtx < X->m) printf("Error: reduce vtx is in local comp range\n");
         //This loop can be handled outside of spmm
         for (k = 0; k < Y->n; k++) {
             X->entries[vtx][k] = 0;
         }
         for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
             tmp = comm->reducer.reduce_source_mapped[idx][j];
+            bool mask_factor = mask[tmp] ^ eval;
+            if (!mask_factor) continue;
             for (k = 0; k < Y->n; k++) {
                 X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k];
             }
@@ -1226,7 +1228,11 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
         base = comm->sendBuffer_p1.proc_map[part];
         for (j = 0; j < range; j++) {
             ind = comm->sendBuffer_p1.row_map_lcl[base + j];
-            memcpy(comm->sendBuffer_p1.buffer[base + j], X->entries[ind], sizeof(double) * X->n);
+            bool mask_factor = mask[ind] ^ eval;
+            if (mask_factor)
+                memcpy(comm->sendBuffer_p1.buffer[base + j], X->entries[ind], sizeof(double) * X->n);
+            else
+                memset(comm->sendBuffer_p1.buffer[base + j], 0, sizeof(double) * X->n);
         }
         MPI_Rsend(&(comm->sendBuffer_p1.buffer[base][0]),
                   range * X->n,
@@ -1245,6 +1251,8 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
         }
         for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
             tmp = comm->reducer.reduce_source_mapped[idx][j];
+            bool mask_factor = tmp >= X->m || (mask[tmp] ^ eval);
+            if (!mask_factor) continue;
             for (k = 0; k < Y->n; k++) {
                 X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k];
             }
@@ -1257,7 +1265,11 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
 
         for (j = 0; j < range; j++) {
             ind = comm->sendBuffer_p2.row_map_lcl[base + j];
-            memcpy(comm->sendBuffer_p2.buffer[base + j], X->entries[ind], sizeof(double) * X->n);
+            bool mask_factor = ind >= X->m || (mask[ind] ^ eval);
+            if (mask_factor)
+                memcpy(comm->sendBuffer_p2.buffer[base + j], X->entries[ind], sizeof(double) * X->n);
+            else
+                memset(comm->sendBuffer_p2.buffer[base + j], 0, sizeof(double) * X->n);
         }
         MPI_Rsend(&(comm->sendBuffer_p2.buffer[base][0]),
                   range * X->n,
@@ -1267,6 +1279,16 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
                   MPI_COMM_WORLD);
         //&(Comm->send_ls_p2[i]));
     }
-
+    memset(Y->entries[0], 0, Y->m * Y->n * sizeof(double));
     MPI_Waitall(comm->msgRecvCount_p2, comm->recv_ls_p2, MPI_STATUSES_IGNORE);
+    SparseMat *A = comm->A;
+    // aggregate (sum) all the received data
+    for (i = 0; i < A->m; i++) {
+        for (j = A->ia[i]; j < A->ia[i + 1]; j++) {
+            tmp = A->ja_mapped[j];
+            for (k = 0; k < Y->n; k++) {
+                Y->entries[i][k] += A->val[j] * X->entries[tmp][k];
+            }
+        }
+    }
 }

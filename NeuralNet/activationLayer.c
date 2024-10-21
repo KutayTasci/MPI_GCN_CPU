@@ -2,8 +2,9 @@
 #include <math.h>
 #include <stdlib.h>
 #include "../includes/matrix.h"
+
 //Local function
-void apply(double (*func)(double), activationLayer* layer) {
+void apply(double (*func)(double), activationLayer *layer) {
     for (int i = 0; i < layer->input->mat->m; i++) {
         for (int j = 0; j < layer->input->mat->n; j++) {
             layer->output->mat->entries[i][j] = (*func)(layer->input->mat->entries[i][j]);
@@ -11,7 +12,7 @@ void apply(double (*func)(double), activationLayer* layer) {
     }
 }
 
-void apply_mat(double (*func)(double), Matrix* mat) {
+void apply_mat(double (*func)(double), Matrix *mat) {
     for (int i = 0; i < mat->m; i++) {
         for (int j = 0; j < mat->n; j++) {
             mat->entries[i][j] = (*func)(mat->entries[i][j]);
@@ -45,10 +46,10 @@ double sigmoid(double input) {
     return 1.0 / (1 + exp(-1 * input));
 }
 
-Matrix* sigmoidPrime(Matrix* mat) {
-    Matrix* ones = matrix_create(mat->m, mat->n);
+Matrix *sigmoidPrime(Matrix *mat) {
+    Matrix *ones = matrix_create(mat->m, mat->n, 0);
     matrix_fill(ones, 1);
-    Matrix* temp = matrix_create(mat->m, mat->n);
+    Matrix *temp = matrix_create(mat->m, mat->n, 0);
     matrix_subtract(ones, mat, temp);
     matrix_multiply(mat, temp, ones);
     matrix_free(temp);
@@ -71,8 +72,8 @@ double reluPrimeAtomic(double input) {
     }
 }
 
-Matrix* reluPrime(Matrix* m) {
-    Matrix* mat = matrix_copy(m);
+Matrix *reluPrime(Matrix *m) {
+    Matrix *mat = matrix_copy(m);
     apply_mat(reluPrimeAtomic, mat);
     return mat;
 }
@@ -83,11 +84,11 @@ double tanh_ops(double input) {
 }
 
 
-Matrix* tanhPrime(Matrix* mat) {
-    Matrix* ones = matrix_create(mat->m, mat->n);
+Matrix *tanhPrime(Matrix *mat) {
+    Matrix *ones = matrix_create(mat->m, mat->n, 0);
     matrix_fill(ones, 1);
-    Matrix* temp = matrix_create(mat->m, mat->n);
-    Matrix* out = matrix_create(mat->m, mat->n);
+    Matrix *temp = matrix_create(mat->m, mat->n, 0);
+    Matrix *out = matrix_create(mat->m, mat->n, 0);
     matrix_multiply(mat, mat, temp);
     matrix_subtract(ones, temp, out);
     matrix_free(ones);
@@ -95,19 +96,13 @@ Matrix* tanhPrime(Matrix* mat) {
     return out;
 }
 
-activationLayer* activation_init(enum activation_type type) { // KUTAY
-    activationLayer* layer = malloc(sizeof(activationLayer));
+activationLayer *activation_init(enum activation_type type) { // KUTAY
+    activationLayer *layer = malloc(sizeof(activationLayer));
     layer->type = type;
-    layer->init = false;
     return layer;
 }
 
-void activation_forward(activationLayer* layer) {
-    if (!layer->init) {
-        layer->output = create_output_matrix(layer->input);
-        layer->init = true;
-    }
-
+void activation_forward(activationLayer *layer) {
     if (layer->type == SIGMOID) {
         apply(sigmoid, layer);
     } else if (layer->type == TANH) {
@@ -122,9 +117,10 @@ void activation_forward(activationLayer* layer) {
 }
 
 // todo: remove input_error, out_error and do the calculation in place
-Matrix* activation_backward(activationLayer* layer, Matrix* error, double lr) {
-    Matrix* input_error;
-    Matrix* out_error = matrix_create(layer->input->mat->m, layer->input->mat->n);
+Matrix *activation_backward(activationLayer *layer, Matrix *error, double lr) {
+    Matrix *input_error;
+    Matrix *out_error = matrix_create(layer->input->mat->m, layer->input->mat->n,
+                                      error->total_m - error->m);
     if (layer->type == SIGMOID) {
         input_error = sigmoidPrime(layer->input->mat);
         //matrix_scale(lr, input_error);
@@ -135,19 +131,19 @@ Matrix* activation_backward(activationLayer* layer, Matrix* error, double lr) {
         input_error = reluPrime(layer->input->mat);
         //matrix_scale(lr, input_error);
     } else if (layer->type == LEAKY_RELU) {
-        input_error = matrix_create(layer->input->mat->m, layer->input->mat->n);
+        input_error = matrix_create(layer->input->mat->m, layer->input->mat->n, 0);
         apply_mat(leaky_relu_prime, layer->input->mat);
         //matrix_scale(lr, input_error);
     } else {
         exit(1);
     }
     matrix_multiply(error, input_error, out_error);
-    
+
     matrix_free(input_error);
     return out_error;
 }
 
-void activation_free(activationLayer* layer) {
+void activation_free(activationLayer *layer) {
     matrix_free(layer->input->mat);
     matrix_free(layer->output->mat);
 

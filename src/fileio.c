@@ -43,13 +43,13 @@ SparseMat *readSparseMat(char *fName, int partScheme, char *inPartFile) {
         A->inPart = malloc(sizeof(*(A->inPart)) * A->gn);
         A->l2gMap = malloc(sizeof(int) * A->m);
 
-//        FILE *pf = fopen(inPartFile, "rb");
-//        fread(A->inPart, sizeof(int), A->gn, pf);
-//        fclose(pf);
-        FILE *pf = fopen(inPartFile, "r");
-        for (int i = 0; i < A->gn; ++i)
-            fscanf(pf, "%d", &(A->inPart[i]));
+        FILE *pf = fopen(inPartFile, "rb");
+        fread(A->inPart, sizeof(int), A->gn, pf);
         fclose(pf);
+//        FILE *pf = fopen(inPartFile, "r");
+//        for (int i = 0; i < A->gn; ++i)
+//            fscanf(pf, "%d", &(A->inPart[i]));
+//        fclose(pf);
         int ctr = 0;
         for (int i = 0; i < A->gn; ++i) {
             if (A->inPart[i] == world_rank) {
@@ -84,46 +84,86 @@ SparseMat *readSparseMat(char *fName, int partScheme, char *inPartFile) {
     }
 }
 
-ParMatrix *readDenseMat(char *fName, SparseMat *A) {
 
+int readFeatureSize(char *fName) {
+    int m, n;
+    if (strstr(fName, ".csv") != NULL) {
+        char line[300];
+        FILE *file = fopen(fName, "r");
+        fgets(line, 300, file);
+        m = atoi(line);
+        fgets(line, 300, file);
+        n = atoi(line);
+        fclose(file);
+        return n;
+    } else if (strstr(fName, ".bin") != NULL) {
+        FILE *fpmat = fopen(fName, "rb");
+        fread(&m, sizeof(int), 1, fpmat);
+        fread(&n, sizeof(int), 1, fpmat);
+        fclose(fpmat);
+        return n;
+    } else {
+        printf("Unknown file format use either .csv or .bin\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+#define bin_t double
+
+ParMatrix *readDenseMat(char *fName, SparseMat *A, int buffer_size) {
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-    char line[MAXCHAR];
-    char *ptr;
     ParMatrix *X = (ParMatrix *) malloc(sizeof(ParMatrix));
-
-    FILE *file = fopen(fName, "r");
-    fgets(line, MAXCHAR, file);
-    int gm = atoi(line);
-    fgets(line, MAXCHAR, file);
-    int feat_size = atoi(line);
-    X->gm = gm;
-    X->gn = feat_size;
-
-    X->mat = matrix_create(A->m, feat_size);
-
     X->store = STORE_BY_ROWS;
     X->inPart = A->inPart;
     X->l2gMap = A->l2gMap;
     int r_ctr = 0;
-    for (int i = 0; i < X->gm; i++) {
+    if (strstr(fName, ".csv") != NULL) {
+        char line[MAXCHAR];
+        char *ptr;
 
-        if (X->inPart[i] == world_rank) {
-            int c_ctr = 0;
-            char *tok;
-            fgets(line, MAXCHAR, file);
-            for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
-                X->mat->entries[r_ctr][c_ctr++] = strtod(tok, &ptr);
+        FILE *file = fopen(fName, "r");
+        fgets(line, MAXCHAR, file);
+        int gm = atoi(line);
+        fgets(line, MAXCHAR, file);
+        int feat_size = atoi(line);
+        X->gm = gm;
+        X->gn = feat_size;
+
+        X->mat = matrix_create(A->m, feat_size, buffer_size);
+        for (int i = 0; i < X->gm; i++) {
+
+            if (X->inPart[i] == world_rank) {
+                int c_ctr = 0;
+                char *tok;
+                fgets(line, MAXCHAR, file);
+                for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
+                    X->mat->entries[r_ctr][c_ctr++] = strtod(tok, &ptr);
+                }
+                //printf("%d\n", c_ctr);
+                r_ctr++;
+            } else {
+                fgets(line, MAXCHAR, file);
             }
-            //printf("%d\n", c_ctr);
-            r_ctr++;
-        } else {
-            fgets(line, MAXCHAR, file);
         }
-
+        fclose(file);
+    } else if (strstr(fName, ".bin") != NULL) {
+        FILE *fpmat = fopen(fName, "rb");
+        fread(&(X->gm), sizeof(int), 1, fpmat);
+        fread(&(X->gn), sizeof(int), 1, fpmat);
+        X->mat = matrix_create(A->m, X->gn, buffer_size);
+        for (int i = 0; i < X->gm; i++) {
+            if (X->inPart[i] == world_rank) {
+                fread(X->mat->entries[r_ctr++], sizeof(bin_t), X->gn, fpmat);
+            } else {
+                fseek(fpmat, sizeof(bin_t) * X->gn, SEEK_CUR);
+            }
+        }
+        fclose(fpmat);
+    } else {
+        printf("Unknown file format use either .csv or .bin\n");
+        exit(EXIT_FAILURE);
     }
-    X->mat->total_m = X->mat->m;
     X->mat->m = r_ctr;
-    fclose(file);
     return X;
 }

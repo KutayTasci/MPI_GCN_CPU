@@ -53,20 +53,14 @@ ParMatrix *net_forward(neural_net *net, ParMatrix *input, bool eval) {
     for (int i = 0; i < net->n_layers; i++) {
         if (net->layers[i]->type == ACTIVATION) {
             activationLayer *activation_layer = (activationLayer *) net->layers[i]->layer;
-            activation_layer->input = input;
             activation_forward(activation_layer);
-            input = activation_layer->output;
         } else if (net->layers[i]->type == GCN) {
             gcnLayer *gcn_layer = (gcnLayer *) net->layers[i]->layer;
-            gcn_layer->input = input;
             gcn_forward(gcn_layer, eval);
-            input = gcn_layer->output;
         } else if (net->layers[i]->type == DROPOUT) {
             dropoutLayer *dropout_layer = (dropoutLayer *) net->layers[i]->layer;
             if (!eval) {
-                dropout_layer->input = input;
                 dropout_forward(dropout_layer);
-                input = dropout_layer->output;
             } // if eval, do not apply dropout
         }
         MPI_Barrier(MPI_COMM_WORLD);
@@ -130,4 +124,43 @@ void layer_free(layer_super *layer) {
         dropout_free(dropout_layer);
     }
     free(layer);
+}
+
+gcnLayer *isNextGCN(neural_net *net, int i) {
+    if (i + 1 < net->n_layers && net->layers[i + 1]->type == GCN) {
+        return (gcnLayer *) net->layers[i + 1]->layer;
+    } else {
+        return NULL;
+    }
+}
+
+void net_prepare(neural_net *net, ParMatrix *X) {
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    ParMatrix *input = X;
+    for (int i = 0; i < net->n_layers; i++) {
+        if (net->layers[i]->type == GCN) {
+            gcnLayer *gcn_layer = (gcnLayer *) net->layers[i]->layer;
+            gcn_layer->output = create_output_matrix_size(input, gcn_layer->size_output, 0);
+            gcn_layer->input = input;
+            gcn_layer->size_m = input->mat->m;
+            input = gcn_layer->output;
+            if (gcn_layer->comm_type == TP) {
+                TPW *tpw = (TPW *) gcn_layer->comm;
+                map_comm_tp(&tpw->tpComm, gcn_layer->input->mat);
+            }
+        } else if (net->layers[i]->type == ACTIVATION) {
+            activationLayer *activation_layer = (activationLayer *) net->layers[i]->layer;
+            activation_layer->output = create_gcn_output_matrix(input, isNextGCN(net, i), true);
+            activation_layer->input = input;
+            input = activation_layer->output;
+        } else if (net->layers[i]->type == DROPOUT) {
+            dropoutLayer *dropout_layer = (dropoutLayer *) net->layers[i]->layer;
+            dropout_layer->output = create_gcn_output_matrix(input, isNextGCN(net, i), true);
+            dropout_layer->input = input;
+            input = dropout_layer->output;
+            dropout_layer->mask = (bool *) malloc(
+                    sizeof(bool) * dropout_layer->input->mat->m * dropout_layer->input->mat->n);
+        }
+    }
 }

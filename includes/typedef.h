@@ -111,7 +111,7 @@ void csrToCsc(SparseMat *A);
 
 void generate_parCSR(SparseMat *A, int *recv_map, int world_size, int world_rank);
 
-Matrix *matrix_create(int row, int col);
+Matrix *matrix_create(int row, int col, int buffer_s);
 
 void matrix_free(Matrix *m);
 
@@ -119,7 +119,9 @@ ParMatrix *init_ParMatrix(SparseMat *A, int n);
 
 void parMatrixFree(ParMatrix *X);
 
-ParMatrix *create_output_matrix(ParMatrix *input);
+ParMatrix *create_output_matrix(ParMatrix *X);
+
+ParMatrix *create_output_matrix_size(ParMatrix *X, int new_n, int buffer_s);
 
 sendTable *sendTableCreate(int p_count, int myId, int n); //n equals A->m
 void sendTableFree(sendTable *table);

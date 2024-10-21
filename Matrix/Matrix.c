@@ -122,7 +122,7 @@ void init_weights_random(gcnLayer *layer, int scale) {
     double min = -sqrt(6.0) / sqrt((double) m + n);
     double max = sqrt(6.0) / sqrt((double) m + n);
     srand(time(NULL));
-    layer->weights = matrix_create(m, n);
+    layer->weights = matrix_create(m, n, 0);
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
             layer->weights->entries[i][j] = uniform_distribution(min, max) / 10;
@@ -161,7 +161,7 @@ Matrix *matrix_sum_exp(Matrix *m, int axis) {
         int cols = m->n;
         int rows = m->m;
         double total;
-        Matrix *sum = matrix_create(1, rows);
+        Matrix *sum = matrix_create(1, rows, 0);
         for (int i = 0; i < rows; i++) {
             total = 0;
             for (int j = 0; j < cols; j++) {
@@ -243,7 +243,7 @@ void matrix_divide(Matrix *m1, Matrix *m2, Matrix *m) {
 }
 
 Matrix *matrix_copy(Matrix *m) {
-    Matrix *mat = matrix_create(m->m, m->n);
+    Matrix *mat = matrix_create(m->m, m->n, 0);
     for (int i = 0; i < m->m; i++) {
         for (int j = 0; j < m->n; j++) {
             mat->entries[i][j] = m->entries[i][j];
@@ -261,7 +261,7 @@ void matrix_scale(double n, Matrix *mat) {
 }
 
 Matrix *matrix_sqrt(Matrix *mat) {
-    Matrix *mat_new = matrix_create(mat->m, mat->n);
+    Matrix *mat_new = matrix_create(mat->m, mat->n, 0);
     for (int i = 0; i < mat->m; i++) {
         for (int j = 0; j < mat->n; j++) {
             mat_new->entries[i][j] = sqrt(mat->entries[i][j]);
@@ -271,7 +271,7 @@ Matrix *matrix_sqrt(Matrix *mat) {
 }
 
 Matrix *matrix_scale_return(double n, Matrix *mat) {
-    Matrix *mat_new = matrix_create(mat->m, mat->n);
+    Matrix *mat_new = matrix_create(mat->m, mat->n, 0);
     for (int i = 0; i < mat->m; i++) {
         for (int j = 0; j < mat->n; j++) {
             mat_new->entries[i][j] = mat->entries[i][j] * n;
@@ -311,7 +311,7 @@ Matrix *matrix_softmax(Matrix *m) {
     //Matrix* m = matrix_copy(mat_inp);
     //matrix_MinMaxNorm(m);
     Matrix *sum = matrix_sum_exp(m, 1);
-    Matrix *mat = matrix_create(m->m, m->n);
+    Matrix *mat = matrix_create(m->m, m->n, 0);
     for (int i = 0; i < mat->m; i++) {
         for (int j = 0; j < mat->n; j++) {
             mat->entries[i][j] = exp(m->entries[i][j]) / sum->entries[0][i];

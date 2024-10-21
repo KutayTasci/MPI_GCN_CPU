@@ -118,6 +118,9 @@ void map_comm_tp(TP_Comm *Comm, Matrix *B);
 
 void prep_comm_tp(TP_Comm *Comm);
 
-void bind_recv_buffers(Matrix *X, TPW *comm);
+int get_comm_buffer_space(TPW *comm);
+
+int get_buffer_space(TPW *comm);
+
 
 #endif //MPI_GCN_CPU_COMM_H
