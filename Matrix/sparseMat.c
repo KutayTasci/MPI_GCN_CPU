@@ -1294,17 +1294,6 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
     memset(Y->entries[0], 0, Y->m * Y->n * sizeof(double));
     MPI_Waitall(comm->msgRecvCount_p2, comm->recv_ls_p2, MPI_STATUSES_IGNORE);
     SparseMat *A = comm->A;
-    //DEBUG
-    if (X->n == 500 && step == FORWARD && !eval) { // do it for the first one
-        if (first_copy == NULL) {
-            first_copy = matrix_full_copy(X);
-        } else {
-            bool is_same = matrix_equals(X, first_copy);
-            if (!is_same) {
-                printf("BUG!! not same\n");
-            }
-        }
-    }
     // aggregate (sum) all the received data
     for (i = 0; i < A->m; i++) {
         for (j = A->ia[i]; j < A->ia[i + 1]; j++) {

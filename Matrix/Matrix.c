@@ -269,7 +269,9 @@ bool matrix_equals(Matrix *m1, Matrix *m2) {
     for (int i = 0; i < m1->total_m; i++) {
         for (int j = 0; j < m1->n; j++) {
             if (m1->entries[i][j] != m2->entries[i][j]) {
-                printf("the difference is %lf\n", m1->entries[i][j] - m2->entries[i][j]);
+                printf("Difference at %d %d\n", i, j);
+                printf("m1: m, total_m: %d %d\n", m1->m, m1->total_m);
+                printf("m2: m, total_m: %d %d\n", m2->m, m2->total_m);
                 return false;
             }
         }
@@ -380,5 +382,13 @@ void metrics(Matrix *y_hat, Matrix *y, bool *mask) {
     MPI_Reduce(&total, &global_total, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     if (world_rank == 0) {
         printf("%lf,", global_tp / global_total);
+    }
+}
+
+void matrix_clear_buffers(Matrix *m) {
+    for (int i = m->m; i < m->total_m; i++) {
+        for (int j = 0; j < m->n; j++) {
+            m->entries[i][j] = 0;
+        }
     }
 }

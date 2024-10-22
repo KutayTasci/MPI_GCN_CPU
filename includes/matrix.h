@@ -54,4 +54,6 @@ void matrix_MinMaxNorm(Matrix *mat);
 
 void metrics(Matrix *y_hat, Matrix *y, bool *mask);
 
+void matrix_clear_buffers(Matrix *m);
+
 #endif // MATRIX_H_INCLUDED

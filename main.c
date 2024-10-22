@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
         comm1 = initOPComm(A, A_T, feature_size, arg.hidden_size);
         comm2 = initOPComm(A, A_T, arg.hidden_size, output_size);
     }
-    double train_ratio = 1.1;
+    double train_ratio = 0.8; // change later
     bool *train_mask = masking_init(X->mat->m, train_ratio, 123);
     layer_super *gcn_1 = layer_init_gcn(A, comm1, arg.comm_type, X->gn, arg.hidden_size, train_mask);
     layer_super *dropout_1 = layer_init_dropout(0.3);
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
         output = net_forward(net, X, false);
         Matrix *soft = matrix_softmax(output->mat);
         matrix_de_crossEntropy(soft, Y->mat, tempErr, train_mask);
-        totalCrossEntropy(Y->mat, soft);
+//        totalCrossEntropy(Y->mat, soft);
 
         net_backward(net, tempErr, 0.001, i);
         MPI_Barrier(MPI_COMM_WORLD);
