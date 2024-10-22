@@ -36,6 +36,10 @@ void matrix_divide(Matrix *m1, Matrix *m2, Matrix *m);
 
 Matrix *matrix_copy(Matrix *m);
 
+Matrix *matrix_full_copy(Matrix *m);
+
+bool matrix_equals(Matrix *m1, Matrix *m2);
+
 void matrix_scale(double n, Matrix *mat);
 
 Matrix *matrix_sqrt(Matrix *mat);

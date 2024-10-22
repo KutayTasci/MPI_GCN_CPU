@@ -1,9 +1,13 @@
 #include "../includes/sparseMat.h"
+#include "../includes/matrix.h"
 #include <mpi.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+
+//DEBUG
+Matrix *first_copy = NULL;
 
 void aggregate_gemm_overlap(OPComm *opComm, Matrix *X, Matrix *Y, Matrix *B, Matrix *C, int step) {
     int world_size;
@@ -746,7 +750,16 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool eval, bo
             }
         }
     }
-
+    if (Y->n == 500 && step == FORWARD && !eval) { // do it for the first one
+        if (first_copy == NULL) {
+            first_copy = matrix_full_copy(Y);
+        } else {
+            bool is_same = matrix_equals(Y, first_copy);
+            if (!is_same) {
+                printf("BUG!! not same\n");
+            }
+        }
+    }
     //free(request_send);
     //free(request_recv);
 
@@ -1208,7 +1221,6 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
     for (i = 0; i < comm->reducer.lcl_count; i++) {
         idx = comm->reducer.reduce_local[i];
         vtx = comm->reducer.reduce_list_mapped[idx];
-        if (vtx < X->m) printf("Error: reduce vtx is in local comp range\n");
         //This loop can be handled outside of spmm
         for (k = 0; k < Y->n; k++) {
             X->entries[vtx][k] = 0;
@@ -1282,6 +1294,17 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
     memset(Y->entries[0], 0, Y->m * Y->n * sizeof(double));
     MPI_Waitall(comm->msgRecvCount_p2, comm->recv_ls_p2, MPI_STATUSES_IGNORE);
     SparseMat *A = comm->A;
+    //DEBUG
+    if (X->n == 500 && step == FORWARD && !eval) { // do it for the first one
+        if (first_copy == NULL) {
+            first_copy = matrix_full_copy(X);
+        } else {
+            bool is_same = matrix_equals(X, first_copy);
+            if (!is_same) {
+                printf("BUG!! not same\n");
+            }
+        }
+    }
     // aggregate (sum) all the received data
     for (i = 0; i < A->m; i++) {
         for (j = A->ia[i]; j < A->ia[i + 1]; j++) {

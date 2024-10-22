@@ -252,6 +252,31 @@ Matrix *matrix_copy(Matrix *m) {
     return mat;
 }
 
+Matrix *matrix_full_copy(Matrix *m) {
+    Matrix *mat = matrix_create(m->m, m->n, m->total_m - m->m);
+    for (int i = 0; i < m->total_m; i++) {
+        for (int j = 0; j < m->n; j++) {
+            mat->entries[i][j] = m->entries[i][j];
+        }
+    }
+    return mat;
+}
+
+bool matrix_equals(Matrix *m1, Matrix *m2) {
+    if ((m1->m != m2->m) || (m1->n != m2->n) || (m1->total_m != m2->total_m)) {
+        return false;
+    }
+    for (int i = 0; i < m1->total_m; i++) {
+        for (int j = 0; j < m1->n; j++) {
+            if (m1->entries[i][j] != m2->entries[i][j]) {
+                printf("the difference is %lf\n", m1->entries[i][j] - m2->entries[i][j]);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 void matrix_scale(double n, Matrix *mat) {
     for (int i = 0; i < mat->m; i++) {
         for (int j = 0; j < mat->n; j++) {

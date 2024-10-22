@@ -36,7 +36,7 @@ gcnLayer *gcn_init(SparseMat *adj, void *communicator, CommType comm_type, int s
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     gcnLayer *layer = (gcnLayer *) malloc(sizeof(gcnLayer));
-//    layer->size_m = adj->m;
+    // size_m is declared later
     layer->size_f = size_f;
     layer->size_output = size_out;
     layer->comm = communicator;

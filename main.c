@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
         comm1 = initOPComm(A, A_T, feature_size, arg.hidden_size);
         comm2 = initOPComm(A, A_T, arg.hidden_size, output_size);
     }
-    double train_ratio = 0.8;
+    double train_ratio = 1.1;
     bool *train_mask = masking_init(X->mat->m, train_ratio, 123);
     layer_super *gcn_1 = layer_init_gcn(A, comm1, arg.comm_type, X->gn, arg.hidden_size, train_mask);
     layer_super *dropout_1 = layer_init_dropout(0.3);
@@ -63,6 +63,7 @@ int main(int argc, char **argv) {
     net_addLayer(net, gcn_2);
 
     net_prepare(net, X);
+
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (world_rank == 0) {
