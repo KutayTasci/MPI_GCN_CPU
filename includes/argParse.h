@@ -24,7 +24,9 @@ typedef struct {
     char tp_comm_file_T[256];
     char features_file[256];
     char labels_file[256];
-    char mask_file[256];
+    char train_mask_file[256];
+    char test_mask_file[256];
+    char eval_mask_file[256];
     char output_file[256];
     CommType comm_type;
 } args;

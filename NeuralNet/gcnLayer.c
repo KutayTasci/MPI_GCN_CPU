@@ -63,7 +63,7 @@ void setMode(int i) {
     MODE = i;
 }
 
-void gcn_forward(gcnLayer *layer, bool eval) {
+void gcn_forward(gcnLayer *layer, int mask_type) {
     Matrix *temp = matrix_create(layer->size_m, layer->size_f, 0);
     OPComm *opComm = layer->comm;
     TPW *tpw = layer->comm;
@@ -81,7 +81,7 @@ void gcn_forward(gcnLayer *layer, bool eval) {
             aggregate_partial_cco(opComm, layer->input->mat, temp, FORWARD);
             break;
         case 4:
-            aggregate_csc(opComm, layer->input->mat, temp, FORWARD, eval, layer->mask);
+            aggregate_csc(opComm, layer->input->mat, temp, FORWARD, layer->masks[mask_type]);
             break;
         case 5:
             aggregate_cco_csc(opComm, layer->input->mat, temp, FORWARD);
@@ -94,7 +94,7 @@ void gcn_forward(gcnLayer *layer, bool eval) {
             matrix_free(temp);
             return;
         case 8:
-            aggregate_tp(tpw, layer->input->mat, temp, FORWARD, eval, layer->mask);
+            aggregate_tp(tpw, layer->input->mat, temp, FORWARD, layer->masks[mask_type]);
             break;
         default:
             printf("No aggregation mode exists.\n");
@@ -126,7 +126,7 @@ Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error) {
             aggregate_partial_cco(opComm, out_error, temp, BACKWARD);
             break;
         case 4:
-            aggregate_csc(opComm, out_error, temp, BACKWARD, false, layer->mask);
+            aggregate_csc(opComm, out_error, temp, BACKWARD, layer->masks[TRAIN_IDX]);
             break;
         case 5:
             aggregate_cco_csc(opComm, out_error, temp, BACKWARD);
@@ -139,7 +139,7 @@ Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error) {
             break;
         case 8:
             map_comm_tp(&tpw->tpComm_backward, out_error);
-            aggregate_tp(tpw, out_error, temp, BACKWARD, false, layer->mask);
+            aggregate_tp(tpw, out_error, temp, BACKWARD, layer->masks[TRAIN_IDX]);
             break;
         default:
             printf("No aggregation mode exists.\n");

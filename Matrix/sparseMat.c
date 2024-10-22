@@ -637,7 +637,7 @@ void aggregate_cco(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
 
 }
 
-void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool eval, bool *mask) {
+void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -701,7 +701,7 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool eval, bo
         base = bufferS->pid_map[k];
         for (j = 0; j < range; j++) {
             ind = bufferS->vertices_local[base + j];
-            bool mask_factor = mask[ind] ^ eval;
+            bool mask_factor = mask[ind];
 //            memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
             if (mask_factor) {
                 memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
@@ -747,16 +747,6 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool eval, bo
                 for (k = 0; k < Y->n; k++) {
                     Y->entries[target_node][k] += A->val_c[j] * bufferR->data[tmp][k];
                 }
-            }
-        }
-    }
-    if (Y->n == 500 && step == FORWARD && !eval) { // do it for the first one
-        if (first_copy == NULL) {
-            first_copy = matrix_full_copy(Y);
-        } else {
-            bool is_same = matrix_equals(Y, first_copy);
-            if (!is_same) {
-                printf("BUG!! not same\n");
             }
         }
     }
@@ -1206,7 +1196,7 @@ void aggregate_no_comm(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
 }
 
 
-void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mask) {
+void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
     int world_size, world_rank;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
@@ -1227,7 +1217,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
         }
         for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
             tmp = comm->reducer.reduce_source_mapped[idx][j];
-            bool mask_factor = mask[tmp] ^ eval;
+            bool mask_factor = mask[tmp];
             if (!mask_factor) continue;
             for (k = 0; k < Y->n; k++) {
                 X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k];
@@ -1240,7 +1230,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
         base = comm->sendBuffer_p1.proc_map[part];
         for (j = 0; j < range; j++) {
             ind = comm->sendBuffer_p1.row_map_lcl[base + j];
-            bool mask_factor = mask[ind] ^ eval;
+            bool mask_factor = mask[ind];
             if (mask_factor)
                 memcpy(comm->sendBuffer_p1.buffer[base + j], X->entries[ind], sizeof(double) * X->n);
             else
@@ -1263,7 +1253,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
         }
         for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
             tmp = comm->reducer.reduce_source_mapped[idx][j];
-            bool mask_factor = tmp >= X->m || (mask[tmp] ^ eval);
+            bool mask_factor = tmp >= X->m || mask[tmp];
             if (!mask_factor) continue;
             for (k = 0; k < Y->n; k++) {
                 X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k];
@@ -1277,7 +1267,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mas
 
         for (j = 0; j < range; j++) {
             ind = comm->sendBuffer_p2.row_map_lcl[base + j];
-            bool mask_factor = ind >= X->m || (mask[ind] ^ eval);
+            bool mask_factor = ind >= X->m || mask[ind];
             if (mask_factor)
                 memcpy(comm->sendBuffer_p2.buffer[base + j], X->entries[ind], sizeof(double) * X->n);
             else

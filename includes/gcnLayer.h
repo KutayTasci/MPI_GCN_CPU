@@ -4,6 +4,7 @@
 #include "typedef.h"
 #include "basic.h"
 #include "comm.h"
+#include "masking.h"
 
 
 typedef struct {
@@ -22,14 +23,14 @@ typedef struct {
     double *gradients_bias;
     void *comm;
     CommType comm_type;
-    bool *mask;
+    bool **masks; // size: 3
 } gcnLayer;
 
 gcnLayer *gcn_init(SparseMat *adj, void *comm, CommType comm_type, int size_f, int size_out);
 
 void setMode(int i);
 
-void gcn_forward(gcnLayer *layer, bool eval);
+void gcn_forward(gcnLayer *layer, int eval);
 
 Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error);
 

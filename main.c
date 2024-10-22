@@ -50,12 +50,12 @@ int main(int argc, char **argv) {
         comm1 = initOPComm(A, A_T, feature_size, arg.hidden_size);
         comm2 = initOPComm(A, A_T, arg.hidden_size, output_size);
     }
-    double train_ratio = 0.8; // change later
-    bool *train_mask = masking_init(X->mat->m, train_ratio, 123);
-    layer_super *gcn_1 = layer_init_gcn(A, comm1, arg.comm_type, X->gn, arg.hidden_size, train_mask);
+    double train_ratio = 0.7; // change later
+    bool **masks = random_masking_init(X->mat->m, 123, train_ratio, 0.3);
+    layer_super *gcn_1 = layer_init_gcn(A, comm1, arg.comm_type, X->gn, arg.hidden_size, masks);
     layer_super *dropout_1 = layer_init_dropout(0.3);
     layer_super *act_1 = layer_init_activation(RELU);
-    layer_super *gcn_2 = layer_init_gcn(A, comm2, arg.comm_type, arg.hidden_size, Y->gn, train_mask);
+    layer_super *gcn_2 = layer_init_gcn(A, comm2, arg.comm_type, arg.hidden_size, Y->gn, masks);
 
     net_addLayer(net, gcn_1);
     net_addLayer(net, dropout_1);
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
     }
     ParMatrix *output;
     double t1, t2, t3;
-    output = net_forward(net, X, false);
+    output = net_forward(net, X, TRAIN_IDX);
     double tot = 0;
     double min = 99999;
     for (int i = 0; i < arg.n_epochs; i++) {
@@ -81,9 +81,9 @@ int main(int argc, char **argv) {
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
 
-        output = net_forward(net, X, false);
+        output = net_forward(net, X, TRAIN_IDX);
         Matrix *soft = matrix_softmax(output->mat);
-        matrix_de_crossEntropy(soft, Y->mat, tempErr, train_mask);
+        matrix_de_crossEntropy(soft, Y->mat, tempErr, masks[TRAIN_IDX]);
 //        totalCrossEntropy(Y->mat, soft);
 
         net_backward(net, tempErr, 0.001, i);
@@ -95,9 +95,9 @@ int main(int argc, char **argv) {
             min = t2 - t1;
         }
         // test
-        output = net_forward(net, X, true);
+        output = net_forward(net, X, TEST_IDX);
         soft = matrix_softmax(output->mat);
-        metrics(soft, Y->mat, train_mask);
+        metrics(soft, Y->mat, masks[TEST_IDX]);
         matrix_free(soft);
     }
     if (world_rank == 0) {

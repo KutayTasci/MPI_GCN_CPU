@@ -32,11 +32,11 @@ layer_super *layer_init_dropout(double dropout_rate) {
     return layer;
 }
 
-layer_super *layer_init_gcn(SparseMat *adj, void *comm, CommType comm_type, int size_f, int size_out, bool *mask) {
+layer_super *layer_init_gcn(SparseMat *adj, void *comm, CommType comm_type, int size_f, int size_out, bool **masks) {
     layer_super *layer = layer_init(GCN);
     layer->layer = gcn_init(adj, comm, comm_type, size_f, size_out);
     gcnLayer *gcn_layer = (gcnLayer *) layer->layer;
-    gcn_layer->mask = mask;
+    gcn_layer->masks = masks;
     return layer;
 }
 
@@ -49,19 +49,19 @@ void net_addLayer(neural_net *net, layer_super *layer) {
     }
 }
 
-ParMatrix *net_forward(neural_net *net, ParMatrix *input, bool eval) {
+ParMatrix *net_forward(neural_net *net, ParMatrix *input, int mask_type) {
     for (int i = 0; i < net->n_layers; i++) {
         if (net->layers[i]->type == ACTIVATION) {
             activationLayer *activation_layer = (activationLayer *) net->layers[i]->layer;
             activation_forward(activation_layer);
         } else if (net->layers[i]->type == GCN) {
             gcnLayer *gcn_layer = (gcnLayer *) net->layers[i]->layer;
-            gcn_forward(gcn_layer, eval);
+            gcn_forward(gcn_layer, mask_type);
         } else if (net->layers[i]->type == DROPOUT) {
             dropoutLayer *dropout_layer = (dropoutLayer *) net->layers[i]->layer;
-            if (!eval) {
+            if (!mask_type) {
                 dropout_forward(dropout_layer);
-            } // if eval, do not apply dropout
+            } // if mask_type, do not apply dropout
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }

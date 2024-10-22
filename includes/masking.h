@@ -6,11 +6,14 @@
 #define MPI_GCN_CPU_MASKING_H
 
 #include <stdbool.h>
-#include "typedef.h"
 
 
-bool *masking_init(int numLocalVertices, double ratio, unsigned int seed);
+#define TRAIN_IDX 0
+#define TEST_IDX 1
+#define EVAL_IDX 2
 
-void masking_forward(bool eval);
+bool **random_masking_init(int numLocalVertices, unsigned int seed, double train_ratio, double test_ratio);
+
+bool **load_masking(char *train_mask_file, char *test_mask_file, char *eval_mask_file, int numLocalVertices);
 
 #endif //MPI_GCN_CPU_MASKING_H

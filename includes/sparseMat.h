@@ -15,7 +15,7 @@ void aggregate_cco(OPComm *opComm, Matrix *X, Matrix *Y, int step);
 
 void aggregate_partial_cco(OPComm *opComm, Matrix *X, Matrix *Y, int step);
 
-void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool eval, bool *mask);
+void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask);
 
 void aggregate_cco_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step);
 
@@ -25,6 +25,6 @@ void aggregate_no_comm(OPComm *opComm, Matrix *X, Matrix *Y, int step);
 
 void aggregate_no_comp(OPComm *opComm, Matrix *X, Matrix *Y, int step);
 
-void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool eval, bool *mask);
+void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask);
 
 #endif // SPARSEMAT_H_INCLUDED

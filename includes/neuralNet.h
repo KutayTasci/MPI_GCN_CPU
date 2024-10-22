@@ -22,7 +22,7 @@ typedef struct {
     int n_layers;
     int layer_capacity;
     double lr;
-    bool *mask; // train, eval mask
+    bool *mask; // train, eval masks
 } neural_net;
 
 neural_net *net_init(int capacity);
@@ -31,13 +31,13 @@ layer_super *layer_init(enum layer_type);
 
 layer_super *layer_init_activation(enum activation_type type);
 
-layer_super *layer_init_gcn(SparseMat *adj, void *comm, CommType comm_type, int size_f, int size_out, bool *mask);
+layer_super *layer_init_gcn(SparseMat *adj, void *comm, CommType comm_type, int size_f, int size_out, bool **masks);
 
 layer_super *layer_init_dropout(double dropout_rate);
 
 void net_addLayer(neural_net *net, layer_super *layer);
 
-ParMatrix *net_forward(neural_net *net, ParMatrix *input, bool eval);
+ParMatrix *net_forward(neural_net *net, ParMatrix *input, int mask_type);
 
 void net_backward(neural_net *net, Matrix *error, double lr, int t);
 
