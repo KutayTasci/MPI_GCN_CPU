@@ -18,7 +18,7 @@ typedef struct {
 
 dropoutLayer *dropout_init(double dropout_rate);
 
-void dropout_forward(dropoutLayer *layer);
+void dropout_forward(dropoutLayer *layer, int mask_type);
 
 void dropout_backward(dropoutLayer *layer, Matrix *error, double lr);
 

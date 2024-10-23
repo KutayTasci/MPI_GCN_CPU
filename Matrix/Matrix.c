@@ -357,7 +357,7 @@ void metrics(Matrix *y_hat, Matrix *y, bool *mask) {
     double fp = 0;
     int total = 0;
     for (int i = 0; i < y->m; i++) {
-        if (mask[i]) {
+        if (!mask[i]) {
             continue;
         }
         double max = y_hat->entries[i][0];

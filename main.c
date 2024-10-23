@@ -50,8 +50,7 @@ int main(int argc, char **argv) {
         comm1 = initOPComm(A, A_T, feature_size, arg.hidden_size);
         comm2 = initOPComm(A, A_T, arg.hidden_size, output_size);
     }
-    double train_ratio = 0.7; // change later
-    bool **masks = random_masking_init(X->mat->m, 123, train_ratio, 0.3);
+    bool **masks = mask_init(X->mat->m, arg, A->inPart);
     layer_super *gcn_1 = layer_init_gcn(A, comm1, arg.comm_type, X->gn, arg.hidden_size, masks);
     layer_super *dropout_1 = layer_init_dropout(0.3);
     layer_super *act_1 = layer_init_activation(RELU);
@@ -108,6 +107,7 @@ int main(int argc, char **argv) {
     MPI_Barrier(MPI_COMM_WORLD);
     // free memory
 //    net_free(net);
+//    free_masks(masks);
     MPI_Finalize();
     return 0;
 }

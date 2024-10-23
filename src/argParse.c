@@ -95,6 +95,10 @@ args parseArgs(int argc, char **argv) {
     copyPath(argv[1], "train_mask.bin", ret.train_mask_file);
     copyPath(argv[1], "test_mask.bin", ret.test_mask_file);
     copyPath(argv[1], "eval_mask.bin", ret.eval_mask_file);
+    if (!checkPathExists(ret.eval_mask_file)) {
+        copyPath(argv[1], "val_mask.bin", ret.eval_mask_file);
+    }
+    ret.random_masking = !(checkPathExists(ret.train_mask_file) && checkPathExists(ret.test_mask_file));
 
     ret.n_threads = atoi(argv[3]);
     ret.n_epochs = atoi(argv[4]);

@@ -14,14 +14,23 @@ dropoutLayer *dropout_init(double dropout_rate) {
     return layer;
 }
 
-void dropout_forward(dropoutLayer *layer) {
-    for (int i = 0; i < layer->input->mat->m; i++) {
-        for (int j = 0; j < layer->input->mat->n; j++) {
-            bool mask = uniform_distribution(0, 1) < layer->dropout_rate;
-            layer->mask[i * layer->input->mat->n + j] = mask;
-            layer->output->mat->entries[i][j] = mask * layer->input->mat->entries[i][j];
+void dropout_forward(dropoutLayer *layer, int mask_type) {
+    if (mask_type != TRAIN_IDX) { // direct forward
+        for (int i = 0; i < layer->input->mat->m; i++) {
+            for (int j = 0; j < layer->input->mat->n; j++) {
+                layer->output->mat->entries[i][j] = layer->input->mat->entries[i][j];
+            }
+        }
+    } else {
+        for (int i = 0; i < layer->input->mat->m; i++) {
+            for (int j = 0; j < layer->input->mat->n; j++) {
+                bool mask = uniform_distribution(0, 1) < layer->dropout_rate;
+                layer->mask[i * layer->input->mat->n + j] = mask;
+                layer->output->mat->entries[i][j] = mask * layer->input->mat->entries[i][j];
+            }
         }
     }
+
 }
 
 void dropout_backward(dropoutLayer *layer, Matrix *error, double lr) {

@@ -29,6 +29,7 @@ typedef struct {
     char eval_mask_file[256];
     char output_file[256];
     CommType comm_type;
+    bool random_masking;
 } args;
 
 args parseArgs(int argc, char **argv);

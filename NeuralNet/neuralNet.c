@@ -59,9 +59,7 @@ ParMatrix *net_forward(neural_net *net, ParMatrix *input, int mask_type) {
             gcn_forward(gcn_layer, mask_type);
         } else if (net->layers[i]->type == DROPOUT) {
             dropoutLayer *dropout_layer = (dropoutLayer *) net->layers[i]->layer;
-            if (!mask_type) {
-                dropout_forward(dropout_layer);
-            } // if mask_type, do not apply dropout
+            dropout_forward(dropout_layer, mask_type);
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
