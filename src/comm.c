@@ -315,7 +315,7 @@ void readTPComm(char *fName, int f, bool partial_reduce, TP_Comm *Comm) {
         Comm->reducer.reduce_list = (int *) malloc(Comm->reducer.reduce_count * sizeof(int));
         Comm->reducer.reduce_list_mapped = (int *) malloc(Comm->reducer.reduce_count * sizeof(int));
         Comm->reducer.reduce_source_mapped = (int **) malloc(Comm->reducer.reduce_count * sizeof(int *));
-
+        Comm->reducer.reduce_source_factors = (double **) malloc(Comm->reducer.reduce_count * sizeof(double *));
         for (int i = 0; i < Comm->reducer.reduce_count; i++) {
             fread(&(Comm->reducer.reduce_list[i]), sizeof(unsigned int), 1, fpmat);
             int tmp;
@@ -323,6 +323,8 @@ void readTPComm(char *fName, int f, bool partial_reduce, TP_Comm *Comm) {
             Comm->reducer.reduce_source_mapped[i] = (int *) malloc((tmp + 1) * sizeof(int));
             Comm->reducer.reduce_source_mapped[i][0] = tmp;
             fread(&(Comm->reducer.reduce_source_mapped[i][1]), sizeof(int), tmp, fpmat);
+            Comm->reducer.reduce_source_factors[i] = (double *) malloc(tmp * sizeof(double));
+            fread(Comm->reducer.reduce_source_factors[i], sizeof(double), tmp, fpmat);
         }
     } else {
         Comm->reducer.init = false;

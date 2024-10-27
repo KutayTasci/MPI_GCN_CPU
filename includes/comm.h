@@ -53,6 +53,7 @@ typedef struct {
     int *reduce_list;
     int *reduce_list_mapped;
     int **reduce_source_mapped; // first element is the length of the list
+    double **reduce_source_factors;
     int *reduce_local;
     int lcl_count;
     int *reduce_nonlocal;

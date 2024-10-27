@@ -1208,6 +1208,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
     MPI_Startall(comm->msgRecvCount_p1, comm->recv_ls_p1);
     MPI_Startall(comm->msgRecvCount_p2, comm->recv_ls_p2);
     int idx, vtx, tmp;
+    double factor;
     for (i = 0; i < comm->reducer.lcl_count; i++) {
         idx = comm->reducer.reduce_local[i];
         vtx = comm->reducer.reduce_list_mapped[idx];
@@ -1217,10 +1218,11 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
         }
         for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
             tmp = comm->reducer.reduce_source_mapped[idx][j];
+            factor = comm->reducer.reduce_source_factors[idx][j - 1];
             bool mask_factor = mask[tmp];
             if (!mask_factor) continue;
             for (k = 0; k < Y->n; k++) {
-                X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k];
+                X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k] * factor;
             }
         }
     }
@@ -1253,10 +1255,11 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
         }
         for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
             tmp = comm->reducer.reduce_source_mapped[idx][j];
+            factor = comm->reducer.reduce_source_factors[idx][j - 1];
             bool mask_factor = tmp >= X->m || mask[tmp];
             if (!mask_factor) continue;
             for (k = 0; k < Y->n; k++) {
-                X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k];
+                X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k] * factor;
             }
         }
     }
