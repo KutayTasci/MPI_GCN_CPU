@@ -73,8 +73,7 @@ int main(int argc, char **argv) {
     ParMatrix *output;
     double t1, t2, t3;
     output = net_forward(net, X, TRAIN_IDX);
-    double tot = 0;
-    double min = 99999;
+    double times[arg.n_epochs];
     for (int i = 0; i < arg.n_epochs; i++) {
         Matrix *tempErr = matrix_create(Y->mat->m, Y->gn, X->mat->total_m - X->mat->m);
         MPI_Barrier(MPI_COMM_WORLD);
@@ -89,10 +88,7 @@ int main(int argc, char **argv) {
         MPI_Barrier(MPI_COMM_WORLD);
         t2 = MPI_Wtime();
         matrix_free(soft);
-        tot += t2 - t1;
-        if (min > t2 - t1) {
-            min = t2 - t1;
-        }
+        times[i] = t2 - t1;
         // test
         output = net_forward(net, X, TEST_IDX);
         soft = matrix_softmax(output->mat);
@@ -100,9 +96,18 @@ int main(int argc, char **argv) {
         matrix_free(soft);
     }
     if (world_rank == 0) {
+        double tot = 0, min = 9999999;
+        for (int i = 0; i < arg.n_epochs; i++) {
+            tot += times[i];
+            if (times[i] < min) min = times[i];
+        }
         printf("Average runtime for current experiment=> %lf\n", tot / arg.n_epochs);
         printf("Min runtime for current experiment=> %lf\n", min);
         printf("---------------------------------------------\n");
+        for (int i = 0; i < arg.n_epochs - 1; i++) {
+            printf("%lf,", times[i]);
+        }
+        printf("%lf\n", times[arg.n_epochs - 1]);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     // free memory
