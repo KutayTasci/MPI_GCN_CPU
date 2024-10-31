@@ -169,6 +169,10 @@ OPComm *initOPComm(SparseMat *adj, SparseMat *adj_T, int size_f, int size_out) {
             }
         }
     }
+    initSendBufferSpace(comm->sendBuffer);
+    initRecvBufferSpace(comm->recvBuffer);
+    initSendBufferSpace(comm->sendBuffer_backward);
+    initRecvBufferSpace(comm->recvBuffer_backward);
 
     if (adj->init == 0) {
         int local_send_volume = comm->sendBuffer->send_count;

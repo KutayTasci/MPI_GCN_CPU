@@ -676,9 +676,6 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
     //MPI_Status* status_list_r = (MPI_Status*) malloc((msgRecvCount) * sizeof(MPI_Status));
     //MPI_Status* status_list_s = (MPI_Status*) malloc((msgSendCount) * sizeof(MPI_Status));
 
-
-
-    initRecvBufferSpace(bufferR);
     for (i = 0; i < msgRecvCount; i++) {
         k = bufferR->list[i];
         range = bufferR->pid_map[k + 1] - bufferR->pid_map[k];
@@ -694,7 +691,6 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
 
     }
 
-    initSendBufferSpace(bufferS);
     for (i = 0; i < msgSendCount; i++) {
         k = bufferS->list[i];
         range = bufferS->pid_map[k + 1] - bufferS->pid_map[k];
@@ -750,11 +746,6 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
             }
         }
     }
-    //free(request_send);
-    //free(request_recv);
-
-    recvBufferSpaceFree(bufferR);
-    sendBufferSpaceFree(bufferS);
 }
 
 void aggregate_cco_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
