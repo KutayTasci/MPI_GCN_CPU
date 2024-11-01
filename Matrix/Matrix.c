@@ -121,7 +121,7 @@ void init_weights_random(gcnLayer *layer, int scale) {
     int n = layer->size_output;
     double min = -sqrt(6.0) / sqrt((double) m + n);
     double max = sqrt(6.0) / sqrt((double) m + n);
-    srand(time(NULL));
+//    srand(time(NULL));
     layer->weights = matrix_create(m, n, 0);
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {

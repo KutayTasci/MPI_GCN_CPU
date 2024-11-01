@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include "includes/fileio.h"
 #include "includes/typedef.h"
 #include "includes/basic.h"
@@ -50,7 +51,9 @@ int main(int argc, char **argv) {
         comm1 = initOPComm(A, A_T, feature_size, arg.hidden_size);
         comm2 = initOPComm(A, A_T, arg.hidden_size, output_size);
     }
+    srand(arg.seed);
     bool **masks = mask_init(X->mat->m, arg, A->inPart);
+    // DEBUG
     layer_super *gcn_1 = layer_init_gcn(A, comm1, arg.comm_type, X->gn, arg.hidden_size, masks);
     layer_super *dropout_1 = layer_init_dropout(0.3);
     layer_super *act_1 = layer_init_activation(RELU);
@@ -73,6 +76,7 @@ int main(int argc, char **argv) {
     ParMatrix *output;
     double t1, t2, t3;
     output = net_forward(net, X, TRAIN_IDX);
+
     double times[arg.n_epochs];
     for (int i = 0; i < arg.n_epochs; i++) {
         Matrix *tempErr = matrix_create(Y->mat->m, Y->gn, X->mat->total_m - X->mat->m);

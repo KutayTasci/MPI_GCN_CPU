@@ -23,7 +23,7 @@ inline void initBias(gcnLayer *layer, double d) {
 }
 
 /*
-Function is ready to be intergrated into sparse_Mat struct
+Function is ready to be integrated into sparse_Mat struct
 Then use implement aggregation function
 Don't forget memory management
 */
@@ -47,7 +47,6 @@ gcnLayer *gcn_init(SparseMat *adj, void *communicator, CommType comm_type, int s
         layer->weights = matrix_create(layer->size_f, layer->size_output, 0);
     }
     MPI_Bcast(&(layer->weights->entries[0][0]), layer->weights->m * layer->weights->n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
     initBias(layer, 0);
 
     layer->gradients = matrix_create(layer->size_f, layer->size_output, 0);

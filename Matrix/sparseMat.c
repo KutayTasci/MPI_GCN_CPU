@@ -698,7 +698,6 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
         for (j = 0; j < range; j++) {
             ind = bufferS->vertices_local[base + j];
             bool mask_factor = mask[ind];
-//            memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
             if (mask_factor) {
                 memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
             } else {
@@ -1223,7 +1222,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
         base = comm->sendBuffer_p1.proc_map[part];
         for (j = 0; j < range; j++) {
             ind = comm->sendBuffer_p1.row_map_lcl[base + j];
-            bool mask_factor = mask[ind];
+            bool mask_factor = ind >= X->m || mask[ind];
             if (mask_factor)
                 memcpy(comm->sendBuffer_p1.buffer[base + j], X->entries[ind], sizeof(double) * X->n);
             else

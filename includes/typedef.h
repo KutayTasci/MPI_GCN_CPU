@@ -115,6 +115,8 @@ Matrix *matrix_create(int row, int col, int buffer_s);
 
 void matrix_free(Matrix *m);
 
+void matrix_write(Matrix *m, char *file);
+
 ParMatrix *init_ParMatrix(SparseMat *A, int n);
 
 void parMatrixFree(ParMatrix *X);

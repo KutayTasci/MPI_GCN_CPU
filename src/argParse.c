@@ -9,6 +9,7 @@
 #include <mpi.h>
 #include <string.h>
 #include <dirent.h>
+#include <time.h>
 
 #define printf_r0(...) if (world_rank == 0) printf(__VA_ARGS__)
 
@@ -67,7 +68,7 @@ args parseArgs(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     args ret;
-    char *usage = "Usage: MPI_GCN_CPU <dataset_folder> <inpart_folder> <n_threads> <n_epochs> <agg_mode> <-l lr> <-d dropout_rate> <-t inpart_T_folder> <-s hidden_size>\n";
+    char *usage = "Usage: MPI_GCN_CPU <dataset_folder> <inpart_folder> <n_threads> <n_epochs> <agg_mode> <-l lr> <-d dropout_rate> <-t inpart_T_folder> <-s hidden_size> <-e seed>\n";
     if (argc < 6 || strcmp(argv[1], "-h") == 0) {
         printf_r0("%s", usage);
         printf_r0("inpart_path, inpart_transpose_path: must contain inpart and inpart.bin files\n");
@@ -112,6 +113,7 @@ args parseArgs(int argc, char **argv) {
     ret.symmetric = true;
     ret.hidden_size = 64;
     ret.lr = 0.01;
+    srand(time(NULL));
 
     process_directory(argv[2], ret.adj_file, ret.inpart, ret.tp_comm_file, ret.comm_type);
     for (int i = 6; i < argc; i++) {
@@ -136,6 +138,9 @@ args parseArgs(int argc, char **argv) {
                 printf_r0("Invalid hidden size. Must be greater than 0\n");
                 exit_safe();
             }
+        } else if (strcmp(argv[i], "-e") == 0) {
+            unsigned int seed = atoi(argv[i + 1]);
+            ret.seed = seed;
         }
     }
     // print args

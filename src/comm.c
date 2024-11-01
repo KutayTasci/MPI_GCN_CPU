@@ -12,7 +12,7 @@
 
 // used to send messages in random order
 void shuffle(int array[], int n) {
-    srand(time(NULL)); // Seed the random number generator
+//    srand(time(NULL)); // Seed the random number generator
     for (int i = n - 1; i > 0; i--) {
         // Generate a random index j such that 0 <= j <= i
         int j = rand() % (i + 1);

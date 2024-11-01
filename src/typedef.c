@@ -174,6 +174,17 @@ void matrix_free(Matrix *m) {
     m = NULL;
 }
 
+void matrix_write(Matrix *m, char *file) {
+    FILE *fp = fopen(file, "w");
+    for (int i = 0; i < m->m; i++) {
+        for (int j = 0; j < m->n; j++) {
+            fprintf(fp, "%f ", m->entries[i][j]);
+        }
+        fprintf(fp, "\n");
+    }
+    fclose(fp);
+}
+
 ParMatrix *init_ParMatrix(SparseMat *A, int n) {
     ParMatrix *X = (ParMatrix *) malloc(sizeof(ParMatrix));
     X->gm = A->gm;

@@ -15,6 +15,7 @@ typedef struct {
     int n_epochs;
     int n_threads;
     int hidden_size;
+    unsigned int seed;
     bool symmetric;
     char adj_file[256];
     char inpart[256];
