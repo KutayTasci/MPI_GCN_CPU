@@ -53,7 +53,6 @@ int main(int argc, char **argv) {
     }
     srand(arg.seed);
     bool **masks = mask_init(X->mat->m, arg, A->inPart);
-    // DEBUG
     layer_super *gcn_1 = layer_init_gcn(A, comm1, arg.comm_type, X->gn, arg.hidden_size, masks);
     layer_super *dropout_1 = layer_init_dropout(0.3);
     layer_super *act_1 = layer_init_activation(RELU);

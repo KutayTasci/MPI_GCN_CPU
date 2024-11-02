@@ -157,6 +157,7 @@ args parseArgs(int argc, char **argv) {
         printf("Features file: %s\n", ret.features_file);
         printf("Labels file: %s\n", ret.labels_file);
         printf("TP Comm file: %s\n", ret.tp_comm_file);
+        printf("Seed: %d\n", ret.seed);
     }
 
     if (ret.comm_type == 8) {
