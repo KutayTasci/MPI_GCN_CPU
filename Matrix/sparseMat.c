@@ -286,7 +286,7 @@ void aggregate(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
 
 }
 
-void aggregate_csr(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
+void aggregate_csr(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -319,26 +319,28 @@ void aggregate_csr(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
     int range;
     int base;
 
-    initSendBufferSpace(bufferS);
     for (i = 0; i < msgSendCount; i++) {
         k = bufferS->list[i];
         range = bufferS->pid_map[k + 1] - bufferS->pid_map[k];
         base = bufferS->pid_map[k];
         for (j = 0; j < range; j++) {
             ind = bufferS->vertices_local[base + j];
-            memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
+            bool mask_factor = mask[ind];
+            if (mask_factor) {
+                memcpy(bufferS->data[base + j], X->entries[ind], sizeof(double) * bufferR->feature_size);
+            } else {
+                memset(bufferS->data[base + j], 0, sizeof(double) * bufferR->feature_size);
+            }
         }
 
     }
 
-    MPI_Request *request_send = (MPI_Request *) malloc((msgSendCount) * sizeof(MPI_Request));
     MPI_Request *request_recv = (MPI_Request *) malloc((msgRecvCount) * sizeof(MPI_Request));
     //MPI_Status* status_list_r = (MPI_Status*) malloc((msgRecvCount) * sizeof(MPI_Status));
     //MPI_Status* status_list_s = (MPI_Status*) malloc((msgSendCount) * sizeof(MPI_Status));
 
 
 
-    initRecvBufferSpace(bufferR);
     for (i = 0; i < msgRecvCount; i++) {
         k = bufferR->list[i];
         range = bufferR->pid_map[k + 1] - bufferR->pid_map[k];
@@ -371,7 +373,6 @@ void aggregate_csr(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
            Y->m * Y->n * sizeof(double));
 
     MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
-    MPI_Waitall(msgSendCount, request_send, MPI_STATUS_IGNORE);
 
     int vertice;
     for (i = 0; i < A->m; i++) {
@@ -392,8 +393,6 @@ void aggregate_csr(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
 
     }
 
-    recvBufferSpaceFree(bufferR);
-    sendBufferSpaceFree(bufferS);
     //MPI_Request_free(&request);
 
 }

@@ -7,7 +7,7 @@
 
 void aggregate_gemm_overlap(OPComm *opComm, Matrix *X, Matrix *Y, Matrix *B, Matrix *C, int step);
 
-void aggregate_csr(OPComm *opComm, Matrix *X, Matrix *Y, int step);
+void aggregate_csr(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask);
 
 void aggregate(OPComm *opComm, Matrix *X, Matrix *Y, int step);
 

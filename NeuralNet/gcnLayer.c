@@ -68,7 +68,7 @@ void gcn_forward(gcnLayer *layer, int mask_type) {
     TPW *tpw = layer->comm;
     switch (layer->comm_type) {
         case 0:
-            aggregate_csr(opComm, layer->input->mat, temp, FORWARD);
+            aggregate_csr(opComm, layer->input->mat, temp, FORWARD, layer->masks[mask_type]);
             break;
         case 1:
             aggregate(opComm, layer->input->mat, temp, FORWARD);
@@ -113,7 +113,7 @@ Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error) {
     TPW *tpw = layer->comm; // for case TP
     switch (layer->comm_type) {
         case 0:
-            aggregate_csr(opComm, out_error, temp, BACKWARD);
+            aggregate_csr(opComm, out_error, temp, BACKWARD, layer->masks[TRAIN_IDX]);
             break;
         case 1:
             aggregate(opComm, out_error, temp, BACKWARD);
