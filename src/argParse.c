@@ -114,6 +114,7 @@ args parseArgs(int argc, char **argv) {
     ret.hidden_size = 64;
     ret.lr = 0.01;
     srand(time(NULL));
+    ret.seed = 0;
 
     process_directory(argv[2], ret.adj_file, ret.inpart, ret.tp_comm_file, ret.comm_type);
     for (int i = 6; i < argc; i++) {
