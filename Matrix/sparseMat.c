@@ -703,12 +703,12 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
                 memset(bufferS->data[base + j], 0, sizeof(double) * bufferR->feature_size);
             }
         }
-        MPI_Send(&(bufferS->data[base][0]),
-                 range * bufferS->feature_size,
-                 MPI_DOUBLE,
-                 k,
-                 AGG_COMM + world_rank,
-                 MPI_COMM_WORLD);
+        MPI_Rsend(&(bufferS->data[base][0]),
+                  range * bufferS->feature_size,
+                  MPI_DOUBLE,
+                  k,
+                  AGG_COMM + world_rank,
+                  MPI_COMM_WORLD);
         //&(request_send[i]));
     }
     memset(Y->entries[0], 0,
