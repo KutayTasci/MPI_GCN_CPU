@@ -7,7 +7,6 @@
 #include "typedef.h"
 #include <stdbool.h>
 
-
 typedef struct {
     sendBuffer *sendBuffer;
     recvBuffer *recvBuffer;
@@ -24,6 +23,8 @@ typedef struct {
 void reallocNodeSamplingComm(NodeSamplingComm *comm, int new_m);
 
 NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, int feature_size);
+
+void sampleNodes(NodeSamplingComm *comm, int step);
 
 
 #endif //MPI_GCN_CPU_NODESAMPLING_H

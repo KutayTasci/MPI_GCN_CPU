@@ -23,6 +23,7 @@ typedef struct {
     int layer_capacity;
     double lr;
     bool *mask; // train, eval masks
+    NodeSamplingComm *samplingComm;
 } neural_net;
 
 neural_net *net_init(int capacity);
@@ -31,7 +32,7 @@ layer_super *layer_init(enum layer_type);
 
 layer_super *layer_init_activation(enum activation_type type);
 
-layer_super *layer_init_gcn(SparseMat *adj, void *comm, CommType comm_type, int size_f, int size_out, bool **masks);
+layer_super *layer_init_gcn(SparseMat *adj, int size_f, int size_out, bool **masks);
 
 layer_super *layer_init_dropout(double dropout_rate);
 

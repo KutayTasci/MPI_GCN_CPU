@@ -100,6 +100,7 @@ typedef struct {
     int *list;
     int feature_size;
     int *vertices;
+    int *count;
     double **data;
 } recvBuffer;
 

@@ -28,6 +28,6 @@ void aggregate_no_comp(OPComm *opComm, Matrix *X, Matrix *Y, int step);
 
 void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask);
 
-void node_sampling(NodeSamplingComm *samplingComm, Matrix *X, Matrix *Y, int step, bool *mask);
+void aggregate_sampled(NodeSamplingComm *samplingComm, Matrix *X, Matrix *Y, int step, bool *mask);
 
 #endif // SPARSEMAT_H_INCLUDED

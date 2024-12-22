@@ -31,7 +31,7 @@ void setMode(int i);
 
 void gcn_forward(gcnLayer *layer, int eval, NodeSamplingComm *samplingComm);
 
-Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error);
+Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error, NodeSamplingComm *samplingComm);
 
 void gcn_step(gcnLayer *layer, double lr, int t);
 

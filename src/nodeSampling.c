@@ -5,6 +5,7 @@
 #include "../includes/basic.h"
 #include <stdlib.h>
 #include <mpi.h>
+#include <string.h>
 
 NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, int feature_size) {
     int world_size, world_rank;
@@ -39,7 +40,15 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
     // calculate average recv buffer size
     recvTable *rTable = initRecvTable(comm->sendBuffer, A_T); // todo remove vertex mappings
     comm->recvBuffer = initRecvBuffer(rTable, feature_size);
+    comm->recvBuffer->count = (int *) malloc(sizeof(int) * world_size);
+    memset(comm->recvBuffer->count, 0, sizeof(int) * world_size);
     // calculate what messages to send by using csc and csr
-    
+
+    return comm;
 }
 
+void sampleNodes(NodeSamplingComm *comm, int step) {
+    // send the global indices of the nodes to be sampled
+    // then send the features
+    // update comm->recvBuffer->count everytime do not update pid_map
+}

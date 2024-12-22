@@ -62,53 +62,15 @@ void setMode(int i) {
 
 void gcn_forward(gcnLayer *layer, int mask_type, NodeSamplingComm *samplingComm) {
     Matrix *temp = matrix_create(layer->size_m, layer->size_f, 0);
-    node_sampling(samplingComm, layer->input, temp, FORWARD, mask_type);
+    aggregate_sampled(samplingComm, layer->input->mat, temp, FORWARD, layer->masks[mask_type]);
     GEMM(temp, layer->weights, layer->bias, layer->output->mat);
     matrix_free(temp);
 }
 
-Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error) {
+Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error, NodeSamplingComm *samplingComm) {
     Matrix *temp = matrix_create(layer->size_m, layer->size_output, 0);
     Matrix *out = matrix_create(layer->size_m, layer->size_f, out_error->total_m - out_error->m);
-    OPComm *opComm = layer->comm; // for case OP
-    TPW *tpw = layer->comm; // for case TP
-    switch (layer->comm_type) {
-        case 0:
-            aggregate_csr(opComm, out_error, temp, BACKWARD, layer->masks[TRAIN_IDX]);
-            break;
-        case 1:
-            aggregate(opComm, out_error, temp, BACKWARD);
-            break;
-        case 2:
-            aggregate_cco(opComm, out_error, temp, BACKWARD);
-            break;
-        case 3:
-            aggregate_partial_cco(opComm, out_error, temp, BACKWARD);
-            break;
-        case 4:
-            aggregate_csc(opComm, out_error, temp, BACKWARD, layer->masks[TRAIN_IDX]);
-            break;
-        case 5:
-            aggregate_cco_csc(opComm, out_error, temp, BACKWARD);
-            break;
-        case 6:
-            aggregate_cco_hybrid(opComm, out_error, temp, BACKWARD);
-            break;
-        case 7:
-            aggregate_partial_cco(opComm, out_error, temp, BACKWARD);
-            break;
-        case 8:
-            map_comm_tp(&tpw->tpComm_backward, out_error);
-            aggregate_tp(tpw, out_error, temp, BACKWARD, layer->masks[TRAIN_IDX]);
-            break;
-        default:
-            printf("No aggregation mode exists.\n");
-            printf("Modes exist for 1=>All-to-ALL blocking Cycle\n");
-            printf("Modes exist for 2=>All-to-ALL Non-blocking Overlapping\n");
-            printf("Modes exist for 3=>All-to-ALL Non-blocking non-Overlapping\n");
-            exit(1);
-    }
-
+    aggregate_sampled(samplingComm, out_error, temp, BACKWARD, layer->masks[TRAIN_IDX]);
     GEMM_NT(temp, layer->weights, out);
     GEMM_TN(layer->input->mat, temp, layer->gradients);
     bias_grad(temp, layer->gradients_bias);

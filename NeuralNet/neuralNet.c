@@ -34,7 +34,7 @@ layer_super *layer_init_dropout(double dropout_rate) {
 
 layer_super *layer_init_gcn(SparseMat *adj, int size_f, int size_out, bool **masks) {
     layer_super *layer = layer_init(GCN);
-    layer->layer = gcn_init(adj, comm, comm_type, size_f, size_out);
+    layer->layer = gcn_init(adj, size_f, size_out);
     gcnLayer *gcn_layer = (gcnLayer *) layer->layer;
     gcn_layer->masks = masks;
     return layer;
@@ -50,16 +50,18 @@ void net_addLayer(neural_net *net, layer_super *layer) {
 }
 
 ParMatrix *net_forward(neural_net *net, ParMatrix *input, int mask_type) {
+
     for (int i = 0; i < net->n_layers; i++) {
         if (net->layers[i]->type == ACTIVATION) {
             activationLayer *activation_layer = (activationLayer *) net->layers[i]->layer;
             activation_forward(activation_layer);
         } else if (net->layers[i]->type == GCN) {
             gcnLayer *gcn_layer = (gcnLayer *) net->layers[i]->layer;
-            gcn_forward(gcn_layer, mask_type);
+            gcn_forward(gcn_layer, mask_type, net->samplingComm);
         } else if (net->layers[i]->type == DROPOUT) {
             dropoutLayer *dropout_layer = (dropoutLayer *) net->layers[i]->layer;
             dropout_forward(dropout_layer, mask_type);
+
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
