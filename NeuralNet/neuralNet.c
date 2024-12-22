@@ -86,7 +86,7 @@ void net_backward(neural_net *net, Matrix *error, double lr, int t) {
         if (net->layers[i]->type == GCN) {
             gcnLayer *gcn_layer = (gcnLayer *) net->layers[i]->layer;
             tmp = error;
-            error = gcn_backward(gcn_layer, error);
+            error = gcn_backward(gcn_layer, error, net->samplingComm);
             matrix_free(tmp);
             gcn_step(gcn_layer, lr, t);
         } else if (net->layers[i]->type == ACTIVATION) {

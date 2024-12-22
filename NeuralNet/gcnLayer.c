@@ -127,7 +127,5 @@ void gcn_free(gcnLayer *layer) {
 ParMatrix *create_gcn_output_matrix(ParMatrix *X, gcnLayer *gcn_layer, bool is_input) {
     if (!gcn_layer) return create_output_matrix(X);
     int new_n = is_input ? gcn_layer->size_f : gcn_layer->size_output;
-    if (gcn_layer->comm_type != TP) return create_output_matrix_size(X, new_n, 0);
-    int buffer_size = get_buffer_space(gcn_layer->comm);
-    return create_output_matrix_size(X, new_n, buffer_size);
+    return create_output_matrix_size(X, new_n, 0);
 }
