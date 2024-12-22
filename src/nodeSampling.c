@@ -14,28 +14,7 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
     NodeSamplingComm *comm = (NodeSamplingComm *) malloc(sizeof(NodeSamplingComm));
     // calculate average send buffer size
     sendTable *sTable = initSendTable(A);
-    comm->sendBuffer->feature_size = A->n;
-
-    comm->sendBuffer->send_count = 0;
-    comm->msgSendCount = 0;
-    for (int i = 0; i < world_size; i++) {
-        comm->sendBuffer->send_count += sTable->send_count[i];
-        if (sTable->send_count[i] > 0) {
-            comm->msgSendCount++;
-        }
-    }
-    comm->sendBuffer->data = (double **) malloc(sizeof(double *) * comm->msgSendCount);
-    for (int i = 0; i < sTable->p_count; i++) {
-        if (sTable->send_count[i] == 0) {
-            continue;
-        }
-        int max_buffer_size = sTable->send_count[i] * p * 2;
-        if (max_buffer_size > sTable->send_count[i]) {
-            max_buffer_size = sTable->send_count[i];
-        }
-        comm->sendBuffer->data[i] = (double *) malloc(
-                sizeof(double) * max_buffer_size * comm->sendBuffer->feature_size);
-    }
+    initSendBuffer(sTable, A->l2gMap, feature_size);
 
     // calculate average recv buffer size
     recvTable *rTable = initRecvTable(comm->sendBuffer, A_T); // todo remove vertex mappings
@@ -52,6 +31,7 @@ void sampleNodes(NodeSamplingComm *comm, int step) {
     // then send the features
     // update comm->recvBuffer->count everytime do not update pid_map
     for (int i = 0; i < comm->msgSendCount; i++) {
-        int proc_id = comm->sendBuffer.
+        int proc_id = comm->sendBuffer->list[i];
+        // select random vertices to be sampled
     }
 }
