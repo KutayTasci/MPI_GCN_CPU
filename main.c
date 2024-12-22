@@ -13,6 +13,7 @@
 #include "includes/masking.h"
 #include "includes/argParse.h"
 #include "includes/lossFunctions.h"
+#include "includes/nodeSampling.h"
 
 
 //CMD args dataset  MODE epoch
@@ -40,23 +41,13 @@ int main(int argc, char **argv) {
     neural_net *net = net_init(10);
     ParMatrix *X, *Y = readDenseMat(arg.labels_file, A, 0);
     MPI_Barrier(MPI_COMM_WORLD);
-    void *comm1, *comm2;
-    if (arg.comm_type == TP) {
-        comm1 = initTPComm(A, A_T, feature_size, arg.hidden_size, true, arg.tp_comm_file, arg.tp_comm_file_T);
-        comm2 = initTPComm(A, A_T, arg.hidden_size, output_size, true, arg.tp_comm_file, arg.tp_comm_file_T);
-        int buffer_size = get_comm_buffer_space(comm1);
-        X = readDenseMat(arg.features_file, A, buffer_size);
-    } else {
-        X = readDenseMat(arg.features_file, A, 0);
-        comm1 = initOPComm(A, A_T, feature_size, arg.hidden_size);
-        comm2 = initOPComm(A, A_T, arg.hidden_size, output_size);
-    }
+    NodeSamplingComm *comm = nodeSamplingCommInit(A, A_T, 0.1, feature_size);
     srand(arg.seed);
     bool **masks = mask_init(X->mat->m, arg, A->inPart);
-    layer_super *gcn_1 = layer_init_gcn(A, comm1, arg.comm_type, X->gn, arg.hidden_size, masks);
+    layer_super *gcn_1 = layer_init_gcn(A, comm, arg.comm_type, X->gn, arg.hidden_size, masks);
     layer_super *dropout_1 = layer_init_dropout(0.3);
     layer_super *act_1 = layer_init_activation(RELU);
-    layer_super *gcn_2 = layer_init_gcn(A, comm2, arg.comm_type, arg.hidden_size, Y->gn, masks);
+    layer_super *gcn_2 = layer_init_gcn(A, comm, arg.comm_type, arg.hidden_size, Y->gn, masks);
 
     net_addLayer(net, gcn_1);
     net_addLayer(net, dropout_1);

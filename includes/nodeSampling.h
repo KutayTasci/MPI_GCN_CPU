@@ -23,7 +23,7 @@ typedef struct {
 
 void reallocNodeSamplingComm(NodeSamplingComm *comm, int new_m);
 
-NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p);
+NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, int feature_size);
 
 
 #endif //MPI_GCN_CPU_NODESAMPLING_H

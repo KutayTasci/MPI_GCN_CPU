@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p) {
+NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, int feature_size) {
     int world_size, world_rank;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
@@ -38,7 +38,8 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p) {
 
     // calculate average recv buffer size
     recvTable *rTable = initRecvTable(comm->sendBuffer, A_T); // todo remove vertex mappings
-
-
+    comm->recvBuffer = initRecvBuffer(rTable, feature_size);
+    // calculate what messages to send by using csc and csr
+    
 }
 

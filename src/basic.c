@@ -89,22 +89,22 @@ recvTable *initRecvTable(sendBuffer *send_table, SparseMat *A_T) {
 
 
     ind = 0;
-    for (int i = 0; i < world_size; i++) {
-        if (i != world_rank && table->recv_count[i] != 0) {
-            MPI_Irecv(table->table[i], table->recv_count[i], MPI_INT, i, 1, MPI_COMM_WORLD, &(requests2[ind++]));
-        }
-    }
-
-
-    for (int i = 0; i < world_size; i++) {
-        int range = send_table->pid_map[i + 1] - send_table->pid_map[i];
-        int base = send_table->pid_map[i];
-        if (i != world_rank && range != 0) {
-            MPI_Send(&(send_table->vertices[base]), range, MPI_INT, i, 1, MPI_COMM_WORLD);
-        }
-    }
-
-    MPI_Waitall(ind, requests2, MPI_STATUSES_IGNORE);
+//    for (int i = 0; i < world_size; i++) {
+//        if (i != world_rank && table->recv_count[i] != 0) {
+//            MPI_Irecv(table->table[i], table->recv_count[i], MPI_INT, i, 1, MPI_COMM_WORLD, &(requests2[ind++]));
+//        }
+//    }
+//
+//
+//    for (int i = 0; i < world_size; i++) {
+//        int range = send_table->pid_map[i + 1] - send_table->pid_map[i];
+//        int base = send_table->pid_map[i];
+//        if (i != world_rank && range != 0) {
+//            MPI_Send(&(send_table->vertices[base]), range, MPI_INT, i, 1, MPI_COMM_WORLD);
+//        }
+//    }
+//
+//    MPI_Waitall(ind, requests2, MPI_STATUSES_IGNORE);
 
 
     free(requests);
