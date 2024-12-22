@@ -145,10 +145,6 @@ void net_prepare(neural_net *net, ParMatrix *X) {
             gcn_layer->input = input;
             gcn_layer->size_m = input->mat->m;
             input = gcn_layer->output;
-            if (gcn_layer->comm_type == TP) {
-                TPW *tpw = (TPW *) gcn_layer->comm;
-                map_comm_tp(&tpw->tpComm, gcn_layer->input->mat);
-            }
         } else if (net->layers[i]->type == ACTIVATION) {
             activationLayer *activation_layer = (activationLayer *) net->layers[i]->layer;
             activation_layer->output = create_gcn_output_matrix(input, isNextGCN(net, i), true);

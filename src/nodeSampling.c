@@ -51,4 +51,7 @@ void sampleNodes(NodeSamplingComm *comm, int step) {
     // send the global indices of the nodes to be sampled
     // then send the features
     // update comm->recvBuffer->count everytime do not update pid_map
+    for (int i = 0; i < comm->msgSendCount; i++) {
+        int proc_id = comm->sendBuffer.
+    }
 }
