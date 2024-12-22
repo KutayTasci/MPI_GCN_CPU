@@ -1293,26 +1293,13 @@ void aggregate_sampled(NodeSamplingComm *samplingComm, Matrix *X, Matrix *Y, int
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     int i, j, k;
-    int msgSendCount;
     int msgRecvCount;
-    sendBuffer *bufferS;
-    recvBuffer *bufferR;
     SparseMat *A;
     int *buffMap;
     if (step == FORWARD) {
-        A = opComm->adjacency_T;
-        bufferS = opComm->sendBuffer;
-        bufferR = opComm->recvBuffer;
-        buffMap = opComm->adjacency_T->jc_mapped;
-        msgSendCount = opComm->msgSendCount;
-        msgRecvCount = opComm->msgRecvCount;
+        A = samplingComm->A_T;
     } else if (step == BACKWARD) {
-        A = opComm->adjacency;
-        bufferS = opComm->sendBuffer_backward;
-        bufferR = opComm->recvBuffer_backward;
-        buffMap = opComm->adjacency->jc_mapped;
-        msgSendCount = opComm->msgSendCount_b;
-        msgRecvCount = opComm->msgRecvCount_b;
+        A = samplingComm->A;
     } else {
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;

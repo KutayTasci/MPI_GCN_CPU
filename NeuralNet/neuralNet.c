@@ -50,7 +50,6 @@ void net_addLayer(neural_net *net, layer_super *layer) {
 }
 
 ParMatrix *net_forward(neural_net *net, ParMatrix *input, int mask_type) {
-
     for (int i = 0; i < net->n_layers; i++) {
         if (net->layers[i]->type == ACTIVATION) {
             activationLayer *activation_layer = (activationLayer *) net->layers[i]->layer;

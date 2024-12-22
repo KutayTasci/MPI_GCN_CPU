@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
         Matrix *tempErr = matrix_create(Y->mat->m, Y->gn, X->mat->total_m - X->mat->m);
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
-
+        sampleNodes(net->samplingComm, i, X);
         output = net_forward(net, X, TRAIN_IDX);
         Matrix *soft = matrix_softmax(output->mat);
         matrix_de_crossEntropy(soft, Y->mat, tempErr, masks[TRAIN_IDX]);
