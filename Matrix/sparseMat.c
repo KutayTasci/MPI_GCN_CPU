@@ -1,5 +1,6 @@
 #include "../includes/sparseMat.h"
 #include "../includes/matrix.h"
+#include "../includes/nodeSampling.h"
 #include <mpi.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1286,7 +1287,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
     }
 }
 
-void node_sampling(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
+void node_sampling(NodeSamplingComm *samplingComm, Matrix *X, Matrix *Y, int step, bool *mask) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;

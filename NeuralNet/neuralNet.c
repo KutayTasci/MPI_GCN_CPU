@@ -32,7 +32,7 @@ layer_super *layer_init_dropout(double dropout_rate) {
     return layer;
 }
 
-layer_super *layer_init_gcn(SparseMat *adj, void *comm, CommType comm_type, int size_f, int size_out, bool **masks) {
+layer_super *layer_init_gcn(SparseMat *adj, int size_f, int size_out, bool **masks) {
     layer_super *layer = layer_init(GCN);
     layer->layer = gcn_init(adj, comm, comm_type, size_f, size_out);
     gcnLayer *gcn_layer = (gcnLayer *) layer->layer;

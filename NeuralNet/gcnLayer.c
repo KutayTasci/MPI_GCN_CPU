@@ -28,7 +28,7 @@ Then use implement aggregation function
 Don't forget memory management
 */
 
-gcnLayer *gcn_init(SparseMat *adj, void *communicator, CommType comm_type, int size_f, int size_out) {
+gcnLayer *gcn_init(SparseMat *adj, int size_f, int size_out) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
@@ -39,8 +39,6 @@ gcnLayer *gcn_init(SparseMat *adj, void *communicator, CommType comm_type, int s
     // size_m is declared later
     layer->size_f = size_f;
     layer->size_output = size_out;
-    layer->comm = communicator;
-    layer->comm_type = comm_type;
     if (world_rank == 0) {
         init_weights_random(layer, 10);
     } else {
@@ -62,46 +60,9 @@ void setMode(int i) {
     MODE = i;
 }
 
-void gcn_forward(gcnLayer *layer, int mask_type) {
+void gcn_forward(gcnLayer *layer, int mask_type, NodeSamplingComm *samplingComm) {
     Matrix *temp = matrix_create(layer->size_m, layer->size_f, 0);
-    OPComm *opComm = layer->comm;
-    TPW *tpw = layer->comm;
-    switch (layer->comm_type) {
-        case 0:
-            aggregate_csr(opComm, layer->input->mat, temp, FORWARD, layer->masks[mask_type]);
-            break;
-        case 1:
-            aggregate(opComm, layer->input->mat, temp, FORWARD);
-            break;
-        case 2:
-            aggregate_cco(opComm, layer->input->mat, temp, FORWARD);
-            break;
-        case 3:
-            aggregate_partial_cco(opComm, layer->input->mat, temp, FORWARD);
-            break;
-        case 4:
-            aggregate_csc(opComm, layer->input->mat, temp, FORWARD, layer->masks[mask_type]);
-            break;
-        case 5:
-            aggregate_cco_csc(opComm, layer->input->mat, temp, FORWARD);
-            break;
-        case 6:
-            aggregate_cco_hybrid(opComm, layer->input->mat, temp, FORWARD);
-            break;
-        case 7:
-            aggregate_gemm_overlap(opComm, layer->input->mat, temp, layer->weights, layer->output->mat, FORWARD);
-            matrix_free(temp);
-            return;
-        case 8:
-            aggregate_tp(tpw, layer->input->mat, temp, FORWARD, layer->masks[mask_type]);
-            break;
-        default:
-            printf("No aggregation mode exists.\n");
-            printf("Modes exist for 1=>All-to-ALL blocking Cycle\n");
-            printf("Modes exist for 2=>All-to-ALL Non-blocking Overlapping\n");
-            printf("Modes exist for 3=>All-to-ALL Non-blocking non-Overlapping\n");
-            exit(1);
-    }
+    node_sampling(samplingComm, layer->input, temp, FORWARD, mask_type);
     GEMM(temp, layer->weights, layer->bias, layer->output->mat);
     matrix_free(temp);
 }

@@ -3,6 +3,7 @@
 
 #include "typedef.h"
 #include "comm.h"
+#include "nodeSampling.h"
 
 
 void aggregate_gemm_overlap(OPComm *opComm, Matrix *X, Matrix *Y, Matrix *B, Matrix *C, int step);
@@ -26,5 +27,7 @@ void aggregate_no_comm(OPComm *opComm, Matrix *X, Matrix *Y, int step);
 void aggregate_no_comp(OPComm *opComm, Matrix *X, Matrix *Y, int step);
 
 void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask);
+
+void node_sampling(NodeSamplingComm *samplingComm, Matrix *X, Matrix *Y, int step, bool *mask);
 
 #endif // SPARSEMAT_H_INCLUDED

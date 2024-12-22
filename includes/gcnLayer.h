@@ -5,6 +5,7 @@
 #include "basic.h"
 #include "comm.h"
 #include "masking.h"
+#include "nodeSampling.h"
 
 
 typedef struct {
@@ -21,16 +22,14 @@ typedef struct {
     double *v_bias; // second moment bias
     Matrix *gradients;
     double *gradients_bias;
-    void *comm;
-    CommType comm_type;
     bool **masks; // size: 3
 } gcnLayer;
 
-gcnLayer *gcn_init(SparseMat *adj, void *comm, CommType comm_type, int size_f, int size_out);
+gcnLayer *gcn_init(SparseMat *adj, int size_f, int size_out);
 
 void setMode(int i);
 
-void gcn_forward(gcnLayer *layer, int eval);
+void gcn_forward(gcnLayer *layer, int eval, NodeSamplingComm *samplingComm);
 
 Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error);
 
