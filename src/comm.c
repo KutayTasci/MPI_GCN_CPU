@@ -59,7 +59,7 @@ OPComm *initOPComm(SparseMat *adj, SparseMat *adj_T, int size_f, int size_out) {
 
     for (i = 0; i < adj_T->m; i++) {
         temp = adj_T->l2gMap[i];
-        comm->recvBuffMap[temp] = i;
+        comm->recvBuffMap[temp] = i; // global to local recv buffer mapping
     }
 
     for (i = 0; i < comm->recvBuffer->recv_count; i++) {

@@ -13,19 +13,6 @@ sendTable *initSendTable(SparseMat *A) {
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
     sendTable *table = sendTableCreate(world_size, world_rank, A->m);
-    /*
-    for (int i = 0; i < A->m; i++) {
-        for (int j = A->ia[i]; j < A->ia[i+1]; j++) {
-            int u_id = A->inPart[A->ja[j]];
-            if (u_id != world_rank) {
-                if (table->table[u_id][i] == 0) {
-                    table->table[u_id][i] = 1;
-                    //table->send_count[u_id]++;
-                }
-            }
-        }
-    }
-    */
     node_t *tmp_node;
     int ctr = 0;
     for (int i = 0; i < A->m; i++) {
@@ -43,7 +30,6 @@ sendTable *initSendTable(SparseMat *A) {
                     tmp_node->val = i;
 
                     table->send_count[u_id]++;
-                    //ctr++;
                     node_t *tmp = (node_t *) malloc(sizeof(node_t));
                     tmp->next = NULL;
                     tmp->val = -1;

@@ -369,8 +369,7 @@ void aggregate_csr(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
         //&(request_send[i]));
 
     }
-    memset(Y->entries[0], 0,
-           Y->m * Y->n * sizeof(double));
+    memset(Y->entries[0], 0, Y->m * Y->n * sizeof(double));
 
     MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
 
@@ -1282,6 +1281,68 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
             tmp = A->ja_mapped[j];
             for (k = 0; k < Y->n; k++) {
                 Y->entries[i][k] += A->val[j] * X->entries[tmp][k];
+            }
+        }
+    }
+}
+
+void node_sampling(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    int i, j, k;
+    int msgSendCount;
+    int msgRecvCount;
+    sendBuffer *bufferS;
+    recvBuffer *bufferR;
+    SparseMat *A;
+    int *buffMap;
+    if (step == FORWARD) {
+        A = opComm->adjacency_T;
+        bufferS = opComm->sendBuffer;
+        bufferR = opComm->recvBuffer;
+        buffMap = opComm->adjacency_T->jc_mapped;
+        msgSendCount = opComm->msgSendCount;
+        msgRecvCount = opComm->msgRecvCount;
+    } else if (step == BACKWARD) {
+        A = opComm->adjacency;
+        bufferS = opComm->sendBuffer_backward;
+        bufferR = opComm->recvBuffer_backward;
+        buffMap = opComm->adjacency->jc_mapped;
+        msgSendCount = opComm->msgSendCount_b;
+        msgRecvCount = opComm->msgRecvCount_b;
+    } else {
+        printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
+        return;
+    }
+    int range, base, rRange;;
+    //Fill send table
+    int ind, ind_c;
+    memset(Y->entries[0], 0,
+           Y->m * Y->n * sizeof(double));
+
+
+    //Local comp will be here
+    int vertice;
+    for (i = A->proc_map[world_rank]; i < A->proc_map[world_rank + 1]; i++) {
+        int target_node = A->ic[i].v_id;
+        for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
+            for (k = 0; k < Y->n; k++) {
+                Y->entries[target_node][k] += A->val_c[j] * X->entries[buffMap[j]][k];
+            }
+        }
+    }
+    int part;
+    for (int t = 0; t < msgRecvCount; t++) {
+        part = bufferR->list[t];
+        for (i = A->proc_map[part]; i < A->proc_map[part + 1]; i++) {
+            int target_node = A->ic[i].v_id;
+            for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
+                int tmp = A->jc_mapped[j];
+                for (k = 0; k < Y->n; k++) {
+                    Y->entries[target_node][k] += A->val_c[j] * bufferR->data[tmp][k];
+                }
             }
         }
     }

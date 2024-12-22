@@ -27,6 +27,8 @@ add_executable(MPI_GCN_CPU
         includes/comm.h
         src/argParse.c
         includes/argParse.h
+        includes/nodeSampling.h
+        src/nodeSampling.c
 )
 
 target_link_libraries(MPI_GCN_CPU m)

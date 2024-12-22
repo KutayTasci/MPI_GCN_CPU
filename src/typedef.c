@@ -122,15 +122,6 @@ void generate_parCSR(SparseMat *A, int *recv_map, int world_size, int world_rank
         A->proc_map[i] = A->proc_map[i - 1];
     }
     A->proc_map[0] = 0;
-    /*
-    if (world_rank == 0) {
-        for (i=0;i<A->proc_map[world_size] + 1;i++) {
-            printf("%d, ", A->ic[i].v_id);
-        }
-        printf("\n");
-    }
-    */
-
 }
 
 Matrix *matrix_create(int row, int col, int buffer_s) {
