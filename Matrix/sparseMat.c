@@ -1304,32 +1304,40 @@ void aggregate_sampled(NodeSamplingComm *samplingComm, Matrix *X, Matrix *Y, int
         printf("Aggregate step can only execute in FORWARD or BACKWARD mode.\n");
         return;
     }
-    int range, base, rRange;;
     //Fill send table
     int ind, ind_c;
     memset(Y->entries[0], 0,
            Y->m * Y->n * sizeof(double));
 
-
+    // todo can improve this part
     //Local comp will be here
     int vertice;
-    for (i = A->proc_map[world_rank]; i < A->proc_map[world_rank + 1]; i++) {
-        int target_node = A->ic[i].v_id;
-        for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
-            for (k = 0; k < Y->n; k++) {
-                Y->entries[target_node][k] += A->val_c[j] * X->entries[buffMap[j]][k];
+    for (i = 0; i < A->m; i++) {
+        for (j = A->ia[i]; j < A->ia[i + 1]; j++) {
+            int target_node = A->ja[j];
+            int tmp = A->ja_mapped[j];
+            if (A->inPart[target_node] == world_rank) {
+                for (k = 0; k < Y->n; k++) {
+                    Y->entries[i][k] += A->val[j] * X->entries[tmp][k];
+                }
             }
         }
     }
-    int part;
-    for (int t = 0; t < msgRecvCount; t++) {
-        part = bufferR->list[t];
-        for (i = A->proc_map[part]; i < A->proc_map[part + 1]; i++) {
-            int target_node = A->ic[i].v_id;
-            for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
-                int tmp = A->jc_mapped[j];
-                for (k = 0; k < Y->n; k++) {
-                    Y->entries[target_node][k] += A->val_c[j] * bufferR->data[tmp][k];
+    int base, end;
+    // aggregate sampled nodes
+    for (i = 0; i < samplingComm->msgRecvCount; i++) {
+        int part = samplingComm->recvBuffer->list[i];
+        base = samplingComm->recvBuffer->pid_map[part];
+        end = samplingComm->recvBuffer->pid_map[part + 1];
+        for (j = base; j < end; j++) {
+            int recv_vtx = samplingComm->recvIdxs[j];
+            if (recv_vtx == -1) break;
+            int edges_s = samplingComm->cscR[j];
+            int edges_e = samplingComm->cscR[j + 1];
+            for (k = edges_s; k < edges_e; k++) {
+                int target_node = samplingComm->cscC[k];
+                for (int l = 0; l < Y->n; l++) {
+                    Y->entries[target_node][l] += samplingComm->recvBuffer->data[j][l];
                 }
             }
         }

@@ -19,6 +19,12 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
     // calculate average recv buffer size
     recvTable *rTable = initRecvTable(comm->sendBuffer, A_T); // todo remove vertex mappings
     comm->recvBuffer = initRecvBuffer(rTable, feature_size);
+    comm->recvBuffMap = (int *) malloc(sizeof(int) * A_T->gm);
+    memset(comm->recvBuffMap, -1, sizeof(int) * A_T->gm);
+    for (int i = 0; i < A_T->m; i++) {
+        int temp = A_T->l2gMap[i];
+        comm->recvBuffMap[temp] = i; // global to local recv buffer mapping
+    }
     // calculate what messages to send by using csc and csr
     for (int i = 0; i < comm->recvBuffer->recv_count; i++) {
         int temp = comm->recvBuffer->vertices[i];
@@ -51,7 +57,7 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
             if (part != world_rank) {
                 int local_idx = comm->recvBuffMap[v_j];
                 int idx = comm->cscR[local_idx] + counter[local_idx];
-                comm->cscC[idx] = i;
+                comm->cscC[idx] = i; // save local index
                 counter[local_idx]++;
             }
         }

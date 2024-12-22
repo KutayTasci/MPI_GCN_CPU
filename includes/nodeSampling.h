@@ -17,10 +17,11 @@ typedef struct {
     double p;
     SparseMat *A;
     SparseMat *A_T;
-    int *recvIdxs; // global indexes
-    int *recvBuffMap; // local buffer indexes from global indexes
+    int *recvIdxs; // local indexes
+    int *recvBuffMap; // global indexes to local indexes
     int *cscR; // csc format only for the edges starting from the sampled nodes (row idxs)
     int *cscC; // column idxs (local)
+    double *cscV; // values
     int *sendIdxs; // this is set to max of sendBuffer->vertices
 } NodeSamplingComm;
 
