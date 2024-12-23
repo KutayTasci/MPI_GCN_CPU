@@ -111,6 +111,8 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
     comm->sendIdxs = (int *) malloc(sizeof(int) * max_vtx_cnt);
     sendTableFree(sTable);
     recvTableFree(rTable);
+    comm->A = A;
+    comm->A_T = A_T;
     return comm;
 }
 

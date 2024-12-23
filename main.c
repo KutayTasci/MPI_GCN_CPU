@@ -41,7 +41,9 @@ int main(int argc, char **argv) {
     neural_net *net = net_init(10);
     ParMatrix *X, *Y = readDenseMat(arg.labels_file, A, 0);
     MPI_Barrier(MPI_COMM_WORLD);
+    X = readDenseMat(arg.features_file, A, 0);
     NodeSamplingComm *comm = nodeSamplingCommInit(A, A_T, 0.1, feature_size);
+    net->samplingComm = comm;
     srand(arg.seed);
     bool **masks = mask_init(X->mat->m, arg, A->inPart);
     layer_super *gcn_1 = layer_init_gcn(A, X->gn, arg.hidden_size, masks);
