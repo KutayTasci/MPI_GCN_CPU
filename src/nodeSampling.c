@@ -30,6 +30,40 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
         int temp = comm->recvBuffer->vertices[i];
         comm->recvBuffMap[temp] = i;
     }
+    comm->msgSendCount = 0;
+    comm->msgRecvCount = 0;
+    for (int i = 0; i < world_size; i++) {
+        int range = comm->sendBuffer->pid_map[i + 1] - comm->sendBuffer->pid_map[i];
+        int rRange = comm->recvBuffer->pid_map[i + 1] - comm->recvBuffer->pid_map[i];
+        if (i != world_rank) {
+            if (range != 0) {
+                comm->msgSendCount++;
+            }
+            if (rRange != 0) {
+                comm->msgRecvCount++;
+            }
+        }
+    }
+    comm->sendBuffer->list = (int *) malloc(sizeof(int) * comm->msgSendCount);
+    comm->recvBuffer->list = (int *) malloc(sizeof(int) * comm->msgRecvCount);
+
+    int ctr = 0, ctr_r = 0;
+    for (int i = 0; i < world_size; i++) {
+        int range = comm->sendBuffer->pid_map[i + 1] - comm->sendBuffer->pid_map[i];
+        int rRange = comm->recvBuffer->pid_map[i + 1] - comm->recvBuffer->pid_map[i];
+        if (i != world_rank) {
+            if (range != 0) {
+                comm->sendBuffer->list[ctr] = i;
+                ctr++;
+            }
+            if (rRange != 0) {
+                comm->recvBuffer->list[ctr_r] = i;
+                ctr_r++;
+            }
+        }
+    }
+    initSendBufferSpace(comm->sendBuffer);
+    initRecvBufferSpace(comm->recvBuffer);
     comm->p = p;
     comm->cscR = (int *) malloc(sizeof(int) * (comm->recvBuffer->recv_count + 1)); // first act as a counter
     memset(comm->cscR, 0, sizeof(int) * comm->recvBuffer->recv_count);
@@ -73,10 +107,12 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
         }
     }
     comm->sendIdxs = (int *) malloc(sizeof(int) * max_vtx_cnt);
+    sendTableFree(sTable);
+    recvTableFree(rTable);
     return comm;
 }
 
-inline int bns(int base_idx, int size, int *recvIdxs, double p) {
+int bns(int base_idx, int size, int *recvIdxs, double p) {
     int recv_count = 0;
     for (int i = 0; i < size; i++) {
         bool add = rand() < p * RAND_MAX;

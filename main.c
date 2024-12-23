@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
     args arg = parseArgs(argc, argv);
 
-//    sleep(10); // to attach gdb
+    sleep(10); // to attach gdb
     SparseMat *A = readSparseMat(arg.adj_file, STORE_BY_ROWS, arg.inpart);
     SparseMat *A_T;
     if (arg.symmetric) {

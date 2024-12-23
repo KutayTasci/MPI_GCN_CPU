@@ -68,8 +68,8 @@ args parseArgs(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     args ret;
-    char *usage = "Usage: MPI_GCN_CPU <dataset_folder> <inpart_folder> <n_threads> <n_epochs> <agg_mode> <-l lr> <-d dropout_rate> <-t inpart_T_folder> <-s hidden_size> <-e seed>\n";
-    if (argc < 6 || strcmp(argv[1], "-h") == 0) {
+    char *usage = "Usage: MPI_GCN_CPU <dataset_folder> <inpart_folder> <n_threads> <n_epochs> <-l lr> <-d dropout_rate> <-t inpart_T_folder> <-s hidden_size> <-e seed>\n";
+    if (argc < 5 || strcmp(argv[1], "-h") == 0) {
         printf_r0("%s", usage);
         printf_r0("inpart_path, inpart_transpose_path: must contain inpart and inpart.bin files\n");
         printf_r0("dataset_folder: must contain features.csv and labels.csv\n");
@@ -103,11 +103,6 @@ args parseArgs(int argc, char **argv) {
 
     ret.n_threads = atoi(argv[3]);
     ret.n_epochs = atoi(argv[4]);
-    ret.comm_type = atoi(argv[5]);
-    if (ret.comm_type < 0 || ret.comm_type > 8) {
-        printf_r0("Invalid aggregation mode. Must be between 0 and 8\n");
-        exit_safe();
-    }
     // set defaults
     ret.dropout_rate = 0.5;
     ret.symmetric = true;
@@ -115,9 +110,9 @@ args parseArgs(int argc, char **argv) {
     ret.lr = 0.01;
     srand(time(NULL));
     ret.seed = 0;
-
+    ret.comm_type = 0;
     process_directory(argv[2], ret.adj_file, ret.inpart, ret.tp_comm_file, ret.comm_type);
-    for (int i = 6; i < argc; i++) {
+    for (int i = 5; i < argc; i++) {
         if (strcmp(argv[i], "-d") == 0) {
             ret.dropout_rate = atof(argv[i + 1]);
             if (ret.dropout_rate < 0 || ret.dropout_rate > 1) {
@@ -161,16 +156,6 @@ args parseArgs(int argc, char **argv) {
         printf("Seed: %d\n", ret.seed);
     }
 
-    if (ret.comm_type == 8) {
-        if (ret.tp_comm_file[0] == '\0') {
-            printf_r0("TP aggregation mode selected but no tp_comm file found\n");
-            exit_safe();
-        }
-        if (!ret.symmetric && ret.tp_comm_file_T[0] == '\0') {
-            printf_r0("TP aggregation mode selected but no tp_comm file found for transpose\n");
-            exit_safe();
-        }
-    }
     if (ret.inpart[0] == '\0' || ret.adj_file[0] == '\0') {
         printf_r0("inpart or adj file not found\n");
         exit_safe();
