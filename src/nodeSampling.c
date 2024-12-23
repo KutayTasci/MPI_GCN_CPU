@@ -31,7 +31,7 @@ void setSamplingProbability(NodeSamplingComm *comm){
 
     double tot_rec = 0.0;
     double max_rec = 0.0;
-    double imbalance_rat = 20000.0; // big enough
+    double lowest_imbalance_rat = 20000.0; // big enough
     int best_k = 1;
     for(int k = 1; k <= max_k; k++) {
         for(int i = 0; i < world_size; i++) {
@@ -43,9 +43,12 @@ void setSamplingProbability(NodeSamplingComm *comm){
             tot_rec += rec_vol;
         }
         double avg_rec = tot_rec / noOfPartition;
-
+        double imbalance_rat = 20000.0;
         if(avg_rec > 0) {
             imbalance_rat = max_rec / avg_rec;
+        }
+        if( imbalance_rat < lowest_imbalance_rat) {
+            lowest_imbalance_rat = imbalance_rat;
             best_k = k;
         }
     }
