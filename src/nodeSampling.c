@@ -83,7 +83,6 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
         comm->cscR[i] += comm->cscR[i - 1];
     }
     comm->cscC = (int *) malloc(sizeof(int) * comm->cscR[comm->recvBuffer->recv_count]);
-    printf("csc size: %d, csr size: %d\n", comm->cscR[comm->recvBuffer->recv_count], comm->recvBuffer->recv_count);
     int *counter = (int *) malloc(sizeof(int) * comm->recvBuffer->recv_count);
     memset(counter, 0, sizeof(int) * comm->recvBuffer->recv_count);
     for (int i = 0; i < A->m; i++) {
