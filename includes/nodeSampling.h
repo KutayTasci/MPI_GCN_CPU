@@ -24,7 +24,7 @@ typedef struct {
     double *cscV; // values
     int *sendIdxs; // this is set to max of sendBuffer->vertices
     int *boundaryCounts;
-    float *samplingProb;
+    double *samplingProb;
 } NodeSamplingComm;
 
 

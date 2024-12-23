@@ -51,7 +51,7 @@ void setSamplingProbability(NodeSamplingComm *comm){
     double max_prob = 0;
     for(int i = 0; i < size; i++) {
         int count = comm->boundaryCounts[i];
-        float probability = max(0.1, 1 - count * best_k / tot_halo);
+        double probability = max(0.1, 1 - count * best_k / tot_halo);
         max_prob = max(max_prob, probability);
         comm->samplingProb[i] = probability;
     }
