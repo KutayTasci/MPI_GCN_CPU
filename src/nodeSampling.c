@@ -7,6 +7,56 @@
 #include <mpi.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
+
+void setSamplingProbability(NodeSamplingComm *comm){
+    int tot_boundary = 0;
+    int max_boundary = 0;
+    int noOfPartition = 8;
+    int max_k = 1;
+    for(int i = 0; i < size; i++) {
+        int count = comm->boundaryCounts[i];
+        max_boundary = (count > max_boundary) ? count : max_boundary;
+        tot_boundary += count;
+    }
+
+    if( tot_boundary > 0) {
+        max_k  = tot_boundary / noOfPartition
+    }
+    if( max_k > (noOfPartition / 2 - noOfPartition / 16)) {
+        max_k = (noOfPartition / 2 - noOfPartition / 16);
+    }
+
+    double tot_rec = 0.0;
+    double max_rec = 0.0;
+    double imbalance_rat = 20000.0; // big enough
+    int best_k = 1;
+    for(int k = 1; k <= max_k; k++) {
+        for(int i = 0; i < size; i++) {
+            int count = comm->boundaryCounts[i];
+            double probability = max(0.1, 1 - count * k / tot_halo)
+            double rec_vol = math.ceil(count * probability)
+
+            max_rec = (rec_vol > max_rec) ? rec_vol : max_rec;
+            tot_rec += rec_vol;
+        }
+        double avg_rec = tot_rec / noOfPartition;
+
+        if(avg_rec > 0) {
+            imbalance_rat = max_rec / avg_rec;
+            best_k = k;
+        }
+    }
+
+    double max_prob = 0;
+    for(int i = 0; i < size; i++) {
+        int count = comm->boundaryCounts[i];
+        float probability = max(0.1, 1 - count * best_k / tot_halo);
+        max_prob = max(max_prob, probability);
+        comm->samplingProb[i] = probability;
+    }
+    double maxMultp =  1 / max_prob;
+}
 
 NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, int feature_size) {
     int world_size, world_rank;
@@ -117,6 +167,8 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
     memset(comm->boundaryCounts, 0, sizeof(int) * world_size);
     comm->boundaryCounts[world_rank] = comm->recvBuffer->recv_count;
     MPI_Allreduce(MPI_IN_PLACE, comm->boundaryCounts, world_size, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+    setSamplingProbability(comm)
     return comm;
 }
 
@@ -133,6 +185,8 @@ int bns(int base_idx, int size, int *recvIdxs, double p) {
     } // otherwise it is full
     return recv_count;
 }
+
+int gbr(int base_idx, int size)
 
 #define set_seed(rank) srand(rank + step * world_size)
 
