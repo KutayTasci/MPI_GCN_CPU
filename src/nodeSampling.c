@@ -58,6 +58,30 @@ void setSamplingProbability(NodeSamplingComm *comm){
         comm->samplingProb[i] = probability;
     }
     double maxMultp =  1 / max_prob;
+
+    return;
+}
+
+double calculate_multiplier(double loss_t_prev, double loss_t, double max_multp) {
+    double epsilon = 0.001;  // Minimum threshold (Δmin)
+    double delta_max = max_multp - 1;  // Maximum threshold (Δmax)
+    double th_min = -0.05;
+    double th_dif = epsilon - th_min;
+
+    double delta_loss = loss_t_prev - loss_t;
+    double delta_p;
+
+    if (delta_loss < epsilon) {
+        double ll = min(th_dif, epsilon - delta_loss);
+        delta_p = -1 * delta_max * ll / th_dif;
+    } else if (delta_loss > delta_max) {
+        delta_p = delta_max;  // Cap to Δmax
+    } else {
+        delta_p = delta_loss;  // Use as is
+    }
+
+    double multiplier = 1 - delta_p;
+    return multiplier;
 }
 
 NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, int feature_size) {
@@ -170,7 +194,7 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
     comm->boundaryCounts[world_rank] = comm->recvBuffer->recv_count;
     MPI_Allreduce(MPI_IN_PLACE, comm->boundaryCounts, world_size, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-    setSamplingProbability(comm)
+    setSamplingProbability(comm);
     return comm;
 }
 
@@ -187,8 +211,6 @@ int bns(int base_idx, int size, int *recvIdxs, double p) {
     } // otherwise it is full
     return recv_count;
 }
-
-int gbr(int base_idx, int size)
 
 #define set_seed(rank) srand(rank + step * world_size)
 
