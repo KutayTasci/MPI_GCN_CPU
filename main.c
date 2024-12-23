@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
     args arg = parseArgs(argc, argv);
 
-    sleep(10); // to attach gdb
+//    sleep(10); // to attach gdb
     SparseMat *A = readSparseMat(arg.adj_file, STORE_BY_ROWS, arg.inpart);
     SparseMat *A_T;
     if (arg.symmetric) {
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     ParMatrix *X, *Y = readDenseMat(arg.labels_file, A, 0);
     MPI_Barrier(MPI_COMM_WORLD);
     X = readDenseMat(arg.features_file, A, 0);
-    NodeSamplingComm *comm = nodeSamplingCommInit(A, A_T, 0.1, feature_size);
+    NodeSamplingComm *comm = nodeSamplingCommInit(A, A_T, arg.p, feature_size);
     net->samplingComm = comm;
     srand(arg.seed);
     bool **masks = mask_init(X->mat->m, arg, A->inPart);

@@ -68,7 +68,7 @@ args parseArgs(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     args ret;
-    char *usage = "Usage: MPI_GCN_CPU <dataset_folder> <inpart_folder> <n_threads> <n_epochs> <-l lr> <-d dropout_rate> <-t inpart_T_folder> <-s hidden_size> <-e seed>\n";
+    char *usage = "Usage: MPI_GCN_CPU <dataset_folder> <inpart_folder> <n_threads> <n_epochs> <-l lr> <-d dropout_rate> <-t inpart_T_folder> <-s hidden_size> <-e seed> <-p probability>\n";
     if (argc < 5 || strcmp(argv[1], "-h") == 0) {
         printf_r0("%s", usage);
         printf_r0("inpart_path, inpart_transpose_path: must contain inpart and inpart.bin files\n");
@@ -137,6 +137,12 @@ args parseArgs(int argc, char **argv) {
         } else if (strcmp(argv[i], "-e") == 0) {
             unsigned int seed = atoi(argv[i + 1]);
             ret.seed = seed;
+        } else if (strcmp(argv[i], "-p") == 0) {
+            ret.p = atof(argv[i + 1]);
+            if (ret.p <= 0 || ret.p > 1) {
+                printf_r0("Invalid probability. Must be between 0 and 1\n");
+                exit_safe();
+            }
         }
     }
     // print args

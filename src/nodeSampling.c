@@ -112,6 +112,11 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
     recvTableFree(rTable);
     comm->A = A;
     comm->A_T = A_T;
+
+    comm->boundaryCounts = (int *) malloc(sizeof(int) * world_size);
+    memset(comm->boundaryCounts, 0, sizeof(int) * world_size);
+    comm->boundaryCounts[world_rank] = comm->recvBuffer->recv_count;
+    MPI_Allreduce(MPI_IN_PLACE, comm->boundaryCounts, world_size, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     return comm;
 }
 

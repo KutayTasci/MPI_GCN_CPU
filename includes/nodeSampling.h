@@ -23,6 +23,7 @@ typedef struct {
     int *cscC; // column idxs (local)
     double *cscV; // values
     int *sendIdxs; // this is set to max of sendBuffer->vertices
+    int *boundaryCounts;
 } NodeSamplingComm;
 
 
