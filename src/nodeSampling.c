@@ -16,14 +16,14 @@ void setSamplingProbability(NodeSamplingComm *comm){
     int max_k = 1;
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    for(int i = 0; i < size; i++) {
+    for(int i = 0; i < world_size; i++) {
         int count = comm->boundaryCounts[i];
         max_boundary = (count > max_boundary) ? count : max_boundary;
         tot_boundary += count;
     }
 
     if( tot_boundary > 0) {
-        max_k  = tot_boundary / noOfPartition
+        max_k  = tot_boundary / noOfPartition;
     }
     if( max_k > (noOfPartition / 2 - noOfPartition / 16)) {
         max_k = (noOfPartition / 2 - noOfPartition / 16);
@@ -34,10 +34,10 @@ void setSamplingProbability(NodeSamplingComm *comm){
     double imbalance_rat = 20000.0; // big enough
     int best_k = 1;
     for(int k = 1; k <= max_k; k++) {
-        for(int i = 0; i < size; i++) {
+        for(int i = 0; i < world_size; i++) {
             int count = comm->boundaryCounts[i];
             double probability = max(0.1, 1 - count * k / tot_boundary);
-            double rec_vol = math.ceil(count * probability);
+            double rec_vol = ceil(count * probability);
 
             max_rec = (rec_vol > max_rec) ? rec_vol : max_rec;
             tot_rec += rec_vol;
@@ -51,7 +51,7 @@ void setSamplingProbability(NodeSamplingComm *comm){
     }
 
     double max_prob = 0;
-    for(int i = 0; i < size; i++) {
+    for(int i = 0; i < world_size; i++) {
         int count = comm->boundaryCounts[i];
         double probability = max(0.1, 1 - count * best_k / tot_boundary);
         max_prob = max(max_prob, probability);
