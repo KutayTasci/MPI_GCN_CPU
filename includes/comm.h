@@ -91,15 +91,8 @@ typedef struct {
 } TPW;
 
 typedef enum {
-    NO_OVER_CSR = 0,
-    NO_OVER_CSR_DATA_STRUCTURE = 1,
-    OVER_CSR_DATA_STRUCTURE = 2,
-    PARTIAL_OVER_CSR_DATA_STRUCTURE = 3,
-    NO_OVER_CSC = 4,
-    OVER_CSC = 5,
-    HYBRID_CSC_CSR = 6,
-    FULL_FULL = 7,
-    TP = 8
+    BNS = 0,
+    GBR = 1
 } CommType;
 
 OPComm *initOPComm(SparseMat *adj, SparseMat *adj_T, int size_f, int size_out);

@@ -206,8 +206,8 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
     memset(comm->boundaryCounts, 0, sizeof(int) * world_size);
     comm->boundaryCounts[world_rank] = comm->recvBuffer->recv_count;
     MPI_Allreduce(MPI_IN_PLACE, comm->boundaryCounts, world_size, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
     setSamplingProbability(comm);
+    comm->sampling_type = sampling_type;
     return comm;
 }
 
@@ -238,7 +238,8 @@ void sampleNodes(NodeSamplingComm *comm, int step, ParMatrix *X) {
         int base = comm->recvBuffer->pid_map[proc_id];
         int *recvIdxs = &comm->recvIdxs[base];
         set_seed(proc_id); // make sure the seed is the same for the sender and receiver
-        int bufferSize = bns(base, comm->recvBuffer->recv_count, recvIdxs, comm->samplingProb[world_rank]);
+        int bufferSize = bns(base, comm->recvBuffer->recv_count, recvIdxs,
+                             comm->sampling_type == BNS ? comm->samplingProb[proc_id] : comm->p);
         MPI_Irecv(comm->recvBuffer->data[base], bufferSize * comm->recvBuffer->feature_size, MPI_DOUBLE, proc_id, 0,
                   MPI_COMM_WORLD, &requests[i]);
     }

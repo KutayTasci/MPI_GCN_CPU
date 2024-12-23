@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     ParMatrix *X, *Y = readDenseMat(arg.labels_file, A, 0);
     MPI_Barrier(MPI_COMM_WORLD);
     X = readDenseMat(arg.features_file, A, 0);
-    NodeSamplingComm *comm = nodeSamplingCommInit(A, A_T, arg.p, feature_size);
+    NodeSamplingComm *comm = nodeSamplingCommInit(A, A_T, arg.p, feature_size, arg.comm_type);
     net->samplingComm = comm;
     srand(arg.seed);
     bool **masks = mask_init(X->mat->m, arg, A->inPart);
