@@ -7,6 +7,9 @@
 #include "typedef.h"
 #include <stdbool.h>
 
+#define BNS 0
+#define GBR 1
+
 typedef struct {
     sendBuffer *sendBuffer;
     recvBuffer *recvBuffer;
@@ -25,12 +28,13 @@ typedef struct {
     int *sendIdxs; // this is set to max of sendBuffer->vertices
     int *boundaryCounts;
     double *samplingProb;
+    int sampling_type;
 } NodeSamplingComm;
 
 
 void reallocNodeSamplingComm(NodeSamplingComm *comm, int new_m);
 
-NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, int feature_size);
+NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, int feature_size, int sampling_type);
 
 void sampleNodes(NodeSamplingComm *comm, int step, ParMatrix *X);
 

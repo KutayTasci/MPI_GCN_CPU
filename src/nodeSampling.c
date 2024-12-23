@@ -9,23 +9,23 @@
 #include <stdio.h>
 #include <math.h>
 
-void setSamplingProbability(NodeSamplingComm *comm){
+void setSamplingProbability(NodeSamplingComm *comm) {
     int tot_boundary = 0;
     int max_boundary = 0;
     int noOfPartition = 8;
     int max_k = 1;
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    for(int i = 0; i < world_size; i++) {
+    for (int i = 0; i < world_size; i++) {
         int count = comm->boundaryCounts[i];
         max_boundary = (count > max_boundary) ? count : max_boundary;
         tot_boundary += count;
     }
 
-    if( tot_boundary > 0) {
-        max_k  = tot_boundary / noOfPartition;
+    if (tot_boundary > 0) {
+        max_k = tot_boundary / noOfPartition;
     }
-    if( max_k > (noOfPartition / 2 - noOfPartition / 16)) {
+    if (max_k > (noOfPartition / 2 - noOfPartition / 16)) {
         max_k = (noOfPartition / 2 - noOfPartition / 16);
     }
 
@@ -33,44 +33,44 @@ void setSamplingProbability(NodeSamplingComm *comm){
     double max_rec = 0.0;
     double lowest_imbalance_rat = 20000.0; // big enough
     int best_k = 1;
-    for(int k = 1; k <= max_k; k++) {
+    for (int k = 1; k <= max_k; k++) {
         tot_rec = 0.0;
         max_rec = 0.0;
-        for(int i = 0; i < world_size; i++) {
+        for (int i = 0; i < world_size; i++) {
             int count = comm->boundaryCounts[i];
             //printf("boundarcnt: %d\n", count);
             //double probability = max(0.1, 1.0 - count * k / (double)tot_boundary);
             double probability = 0.1;
-            if(1.0 - count * k / (double)tot_boundary > 0.1) probability = 1.0 - count * k / (double)tot_boundary;
+            if (1.0 - count * k / (double) tot_boundary > 0.1) probability = 1.0 - count * k / (double) tot_boundary;
             double rec_vol = ceil(count * probability);
             //printf("prob: %f, recvol: %f\n", probability, rec_vol);
-            if(rec_vol > max_rec)
+            if (rec_vol > max_rec)
                 max_rec = rec_vol;
             //max_rec = (rec_vol > max_rec) ? rec_vol : max_rec;
             tot_rec += rec_vol;
         }
         double avg_rec = tot_rec / noOfPartition;
         double imbalance_rat = 20000.0;
-        if(avg_rec > 0) {
+        if (avg_rec > 0) {
             imbalance_rat = max_rec / avg_rec;
         }
         //printf("k: %d imb: %f\n", k, imbalance_rat);
         //printf("maxrec : %f avgrec: %f\n", max_rec, avg_rec);
-        if( imbalance_rat < lowest_imbalance_rat) {
+        if (imbalance_rat < lowest_imbalance_rat) {
             lowest_imbalance_rat = imbalance_rat;
             best_k = k;
         }
     }
 
     double max_prob = 0;
-    comm->samplingProb = (double*)malloc(sizeof(double) * world_size);
-    for(int i = 0; i < world_size; i++) {
+    comm->samplingProb = (double *) malloc(sizeof(double) * world_size);
+    for (int i = 0; i < world_size; i++) {
         int count = comm->boundaryCounts[i];
-        double probability = max(0.1, 1 - count * best_k / tot_boundary);
-        max_prob = max(max_prob, probability);
+        double probability = fmax(0.1, 1 - count * best_k / tot_boundary);
+        max_prob = fmax(max_prob, probability);
         comm->samplingProb[i] = probability;
     }
-    double maxMultp =  1 / max_prob;
+    double maxMultp = 1 / max_prob;
 
     return;
 }
@@ -85,7 +85,7 @@ double calculate_multiplier(double loss_t_prev, double loss_t, double max_multp)
     double delta_p;
 
     if (delta_loss < epsilon) {
-        double ll = min(th_dif, epsilon - delta_loss);
+        double ll = fmin(th_dif, epsilon - delta_loss);
         delta_p = -1 * delta_max * ll / th_dif;
     } else if (delta_loss > delta_max) {
         delta_p = delta_max;  // Cap to Δmax
@@ -97,7 +97,7 @@ double calculate_multiplier(double loss_t_prev, double loss_t, double max_multp)
     return multiplier;
 }
 
-NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, int feature_size) {
+NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, int feature_size, int sampling_type) {
     int world_size, world_rank;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
