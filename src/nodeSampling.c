@@ -14,6 +14,8 @@ void setSamplingProbability(NodeSamplingComm *comm){
     int max_boundary = 0;
     int noOfPartition = 8;
     int max_k = 1;
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     for(int i = 0; i < size; i++) {
         int count = comm->boundaryCounts[i];
         max_boundary = (count > max_boundary) ? count : max_boundary;
@@ -34,8 +36,8 @@ void setSamplingProbability(NodeSamplingComm *comm){
     for(int k = 1; k <= max_k; k++) {
         for(int i = 0; i < size; i++) {
             int count = comm->boundaryCounts[i];
-            double probability = max(0.1, 1 - count * k / tot_halo)
-            double rec_vol = math.ceil(count * probability)
+            double probability = max(0.1, 1 - count * k / tot_boundary);
+            double rec_vol = math.ceil(count * probability);
 
             max_rec = (rec_vol > max_rec) ? rec_vol : max_rec;
             tot_rec += rec_vol;
@@ -51,7 +53,7 @@ void setSamplingProbability(NodeSamplingComm *comm){
     double max_prob = 0;
     for(int i = 0; i < size; i++) {
         int count = comm->boundaryCounts[i];
-        double probability = max(0.1, 1 - count * best_k / tot_halo);
+        double probability = max(0.1, 1 - count * best_k / tot_boundary);
         max_prob = max(max_prob, probability);
         comm->samplingProb[i] = probability;
     }
