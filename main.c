@@ -46,15 +46,16 @@ int main(int argc, char **argv) {
     net->samplingComm = comm;
     srand(arg.seed);
     bool **masks = mask_init(X->mat->m, arg, A->inPart);
-    layer_super *gcn_1 = layer_init_gcn(A, X->gn, arg.hidden_size, masks);
+//    layer_super *gcn_1 = layer_init_gcn(A, X->gn, arg.hidden_size, masks);
+    layer_super *gcn_1 = layer_init_gcn(A, X->gn, Y->gn, masks);
     layer_super *dropout_1 = layer_init_dropout(0.3);
     layer_super *act_1 = layer_init_activation(RELU);
     layer_super *gcn_2 = layer_init_gcn(A, arg.hidden_size, Y->gn, masks);
 
     net_addLayer(net, gcn_1);
-    net_addLayer(net, dropout_1);
-    net_addLayer(net, act_1);
-    net_addLayer(net, gcn_2);
+    //net_addLayer(net, dropout_1);
+    //net_addLayer(net, act_1);
+    //net_addLayer(net, gcn_2);
 
     net_prepare(net, X);
 

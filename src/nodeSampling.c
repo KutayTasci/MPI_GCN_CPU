@@ -66,7 +66,7 @@ void setSamplingProbability(NodeSamplingComm *comm) {
     comm->samplingProb = (double *) malloc(sizeof(double) * world_size);
     for (int i = 0; i < world_size; i++) {
         int count = comm->boundaryCounts[i];
-        double probability = fmax(0.1, 1 - count * best_k / tot_boundary);
+        double probability = fmax(0.1, 1 - count * best_k / (double) tot_boundary);
         max_prob = fmax(max_prob, probability);
         comm->samplingProb[i] = probability;
     }

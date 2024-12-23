@@ -111,6 +111,7 @@ args parseArgs(int argc, char **argv) {
     srand(time(NULL));
     ret.seed = 0;
     ret.comm_type = 0;
+    ret.p = 0.1;
     process_directory(argv[2], ret.adj_file, ret.inpart, ret.tp_comm_file, ret.comm_type);
     for (int i = 5; i < argc; i++) {
         if (strcmp(argv[i], "-d") == 0) {
