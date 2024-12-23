@@ -34,12 +34,19 @@ void setSamplingProbability(NodeSamplingComm *comm){
     double lowest_imbalance_rat = 20000.0; // big enough
     int best_k = 1;
     for(int k = 1; k <= max_k; k++) {
+        tot_rec = 0.0;
+        max_rec = 0.0;
         for(int i = 0; i < world_size; i++) {
             int count = comm->boundaryCounts[i];
-            double probability = max(0.1, 1 - count * k / tot_boundary);
+            //printf("boundarcnt: %d\n", count);
+            //double probability = max(0.1, 1.0 - count * k / (double)tot_boundary);
+            double probability = 0.1;
+            if(1.0 - count * k / (double)tot_boundary > 0.1) probability = 1.0 - count * k / (double)tot_boundary;
             double rec_vol = ceil(count * probability);
-
-            max_rec = (rec_vol > max_rec) ? rec_vol : max_rec;
+            //printf("prob: %f, recvol: %f\n", probability, rec_vol);
+            if(rec_vol > max_rec)
+                max_rec = rec_vol;
+            //max_rec = (rec_vol > max_rec) ? rec_vol : max_rec;
             tot_rec += rec_vol;
         }
         double avg_rec = tot_rec / noOfPartition;
@@ -47,6 +54,8 @@ void setSamplingProbability(NodeSamplingComm *comm){
         if(avg_rec > 0) {
             imbalance_rat = max_rec / avg_rec;
         }
+        //printf("k: %d imb: %f\n", k, imbalance_rat);
+        //printf("maxrec : %f avgrec: %f\n", max_rec, avg_rec);
         if( imbalance_rat < lowest_imbalance_rat) {
             lowest_imbalance_rat = imbalance_rat;
             best_k = k;
@@ -54,6 +63,7 @@ void setSamplingProbability(NodeSamplingComm *comm){
     }
 
     double max_prob = 0;
+    comm->samplingProb = (double*)malloc(sizeof(double) * world_size);
     for(int i = 0; i < world_size; i++) {
         int count = comm->boundaryCounts[i];
         double probability = max(0.1, 1 - count * best_k / tot_boundary);
@@ -228,7 +238,7 @@ void sampleNodes(NodeSamplingComm *comm, int step, ParMatrix *X) {
         int base = comm->recvBuffer->pid_map[proc_id];
         int *recvIdxs = &comm->recvIdxs[base];
         set_seed(proc_id); // make sure the seed is the same for the sender and receiver
-        int bufferSize = bns(base, comm->recvBuffer->recv_count, recvIdxs, comm->p);
+        int bufferSize = bns(base, comm->recvBuffer->recv_count, recvIdxs, comm->samplingProb[world_rank]);
         MPI_Irecv(comm->recvBuffer->data[base], bufferSize * comm->recvBuffer->feature_size, MPI_DOUBLE, proc_id, 0,
                   MPI_COMM_WORLD, &requests[i]);
     }
@@ -243,7 +253,7 @@ void sampleNodes(NodeSamplingComm *comm, int step, ParMatrix *X) {
         int count = next_base - base;
         // select random vertices to be sampled
         set_seed(world_rank);
-        int bufferSize = bns(base, count, comm->sendIdxs, comm->p);
+        int bufferSize = bns(base, count, comm->sendIdxs, comm->samplingProb[proc_id]);
         for (int j = 0; j < bufferSize; j++) {
             int data_idx = comm->sendIdxs[j];
             int local_idx = comm->sendBuffer->vertices_local[data_idx];
