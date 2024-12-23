@@ -32,6 +32,6 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
 
 void sampleNodes(NodeSamplingComm *comm, int step, ParMatrix *X);
 
-inline int bns(int base_idx, int size, int *recvIdxs, double p);
+int bns(int base_idx, int size, int *recvIdxs, double p);
 
 #endif //MPI_GCN_CPU_NODESAMPLING_H

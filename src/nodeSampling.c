@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <string.h>
+#include <stdio.h>
 
 NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, int feature_size) {
     int world_size, world_rank;
@@ -14,7 +15,7 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
     NodeSamplingComm *comm = (NodeSamplingComm *) malloc(sizeof(NodeSamplingComm));
     // calculate average send buffer size
     sendTable *sTable = initSendTable(A);
-    initSendBuffer(sTable, A->l2gMap, feature_size);
+    comm->sendBuffer = initSendBuffer(sTable, A->l2gMap, feature_size);
 
     // calculate average recv buffer size
     recvTable *rTable = initRecvTable(comm->sendBuffer, A_T); // todo remove vertex mappings
@@ -66,7 +67,7 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
     initRecvBufferSpace(comm->recvBuffer);
     comm->p = p;
     comm->cscR = (int *) malloc(sizeof(int) * (comm->recvBuffer->recv_count + 1)); // first act as a counter
-    memset(comm->cscR, 0, sizeof(int) * comm->recvBuffer->recv_count);
+    memset(comm->cscR, 0, sizeof(int) * (comm->recvBuffer->recv_count + 1));
     int v_j, part;
     for (int i = 0; i < A->m; i++) {
         for (int j = A->ia[i]; j < A->ia[i + 1]; j++) {
@@ -78,10 +79,11 @@ NodeSamplingComm *nodeSamplingCommInit(SparseMat *A, SparseMat *A_T, double p, i
             }
         }
     }
-    for (int i = 1; i < comm->recvBuffer->recv_count; i++) {
+    for (int i = 1; i <= comm->recvBuffer->recv_count; i++) {
         comm->cscR[i] += comm->cscR[i - 1];
     }
     comm->cscC = (int *) malloc(sizeof(int) * comm->cscR[comm->recvBuffer->recv_count]);
+    printf("csc size: %d, csr size: %d\n", comm->cscR[comm->recvBuffer->recv_count], comm->recvBuffer->recv_count);
     int *counter = (int *) malloc(sizeof(int) * comm->recvBuffer->recv_count);
     memset(counter, 0, sizeof(int) * comm->recvBuffer->recv_count);
     for (int i = 0; i < A->m; i++) {
