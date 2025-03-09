@@ -722,9 +722,10 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
 //        vertice = A->l2gMap[i];
         int target_node = A->ic[i].v_id;
         for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
-            for (k = 0; k < Y->n; k++) {
-                Y->entries[target_node][k] += A->val_c[j] * X->entries[buffMap[j]][k];
-            }
+//            for (k = 0; k < Y->n; k++) {
+//                Y->entries[target_node][k] += A->val_c[j] * X->entries[buffMap[j]][k];
+//            }
+            cblas_daxpy(Y->n, A->val_c[j], X->entries[buffMap[j]], 1, Y->entries[target_node], 1);
         }
     }
     MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
@@ -739,9 +740,10 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
             int target_node = A->ic[i].v_id;
             for (j = A->ic[i].indptr; j < A->ic[i + 1].indptr; j++) {
                 int tmp = A->jc_mapped[j];
-                for (k = 0; k < Y->n; k++) {
-                    Y->entries[target_node][k] += A->val_c[j] * bufferR->data[tmp][k];
-                }
+//                for (k = 0; k < Y->n; k++) {
+//                    Y->entries[target_node][k] += A->val_c[j] * bufferR->data[tmp][k];
+//                }
+                cblas_daxpy(Y->n, A->val_c[j], bufferR->data[tmp], 1, Y->entries[target_node], 1);
             }
         }
     }
@@ -1203,9 +1205,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
         idx = comm->reducer.reduce_local[i];
         vtx = comm->reducer.reduce_list_mapped[idx];
         //This loop can be handled outside of spmm
-        for (k = 0; k < Y->n; k++) {
-            X->entries[vtx][k] = 0;
-        }
+        memset(X->entries[vtx], 0, sizeof(double) * X->n);
         for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
             tmp = comm->reducer.reduce_source_mapped[idx][j];
             factor = comm->reducer.reduce_source_factors[idx][j - 1];
