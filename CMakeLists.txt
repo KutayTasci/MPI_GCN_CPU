@@ -5,6 +5,7 @@ project(MPI_GCN_CPU LANGUAGES C)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 
 find_package(MPI REQUIRED)
+find_package(BLAS REQUIRED)
 
 add_executable(MPI_GCN_CPU
         main.c
@@ -30,5 +31,5 @@ add_executable(MPI_GCN_CPU
 )
 
 target_link_libraries(MPI_GCN_CPU m)
-target_link_libraries(MPI_GCN_CPU ${MPI_C_LIBRARIES})
-target_include_directories(MPI_GCN_CPU PUBLIC ${MPI_C_INCLUDE_PATH})
+target_link_libraries(MPI_GCN_CPU ${MPI_C_LIBRARIES} ${BLAS_LIBRARIES})
+target_include_directories(MPI_GCN_CPU PUBLIC ${MPI_C_INCLUDE_PATH} ${BLAS_INCLUDE_DIRS})

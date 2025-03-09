@@ -5,6 +5,7 @@
 #include "../includes/dropoutLayer.h"
 #include <stdlib.h>
 #include "../includes/matrix.h"
+#include <cblas.h>
 
 dropoutLayer *dropout_init(double dropout_rate) {
     dropoutLayer *layer = (dropoutLayer *) malloc(sizeof(dropoutLayer));
@@ -16,11 +17,13 @@ dropoutLayer *dropout_init(double dropout_rate) {
 
 void dropout_forward(dropoutLayer *layer, int mask_type) {
     if (mask_type != TRAIN_IDX) { // direct forward
-        for (int i = 0; i < layer->input->mat->m; i++) {
-            for (int j = 0; j < layer->input->mat->n; j++) {
-                layer->output->mat->entries[i][j] = layer->input->mat->entries[i][j];
-            }
-        }
+//        for (int i = 0; i < layer->input->mat->m; i++) {
+//            for (int j = 0; j < layer->input->mat->n; j++) {
+//                layer->output->mat->entries[i][j] = layer->input->mat->entries[i][j];
+//            }
+//        }
+        cblas_dcopy(layer->input->mat->m * layer->input->mat->n, layer->input->mat->entries[0], 1,
+                    layer->output->mat->entries[0], 1);
     } else {
         for (int i = 0; i < layer->input->mat->m; i++) {
             for (int j = 0; j < layer->input->mat->n; j++) {

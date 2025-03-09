@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <cblas.h>
 
 //DEBUG
 Matrix *first_copy = NULL;
@@ -1210,9 +1211,10 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
             factor = comm->reducer.reduce_source_factors[idx][j - 1];
             bool mask_factor = mask[tmp];
             if (!mask_factor) continue;
-            for (k = 0; k < Y->n; k++) {
-                X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k] * factor;
-            }
+//            for (k = 0; k < Y->n; k++) {
+//                X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k] * factor;
+//            }
+            cblas_daxpy(Y->n, factor, X->entries[tmp], 1, X->entries[vtx], 1);
         }
     }
     for (i = 0; i < comm->msgSendCount_p1; i++) {
@@ -1247,9 +1249,10 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
             factor = comm->reducer.reduce_source_factors[idx][j - 1];
             bool mask_factor = tmp >= X->m || mask[tmp];
             if (!mask_factor) continue;
-            for (k = 0; k < Y->n; k++) {
-                X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k] * factor;
-            }
+//            for (k = 0; k < Y->n; k++) {
+//                X->entries[vtx][k] = X->entries[vtx][k] + X->entries[tmp][k] * factor;
+//            }
+            cblas_daxpy(Y->n, factor, X->entries[tmp], 1, X->entries[vtx], 1);
         }
     }
     for (i = 0; i < comm->msgSendCount_p2; i++) {
@@ -1280,9 +1283,10 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
     for (i = 0; i < A->m; i++) {
         for (j = A->ia[i]; j < A->ia[i + 1]; j++) {
             tmp = A->ja_mapped[j];
-            for (k = 0; k < Y->n; k++) {
-                Y->entries[i][k] += A->val[j] * X->entries[tmp][k];
-            }
+//            for (k = 0; k < Y->n; k++) {
+//                Y->entries[i][k] += A->val[j] * X->entries[tmp][k];
+//            }
+            cblas_daxpy(Y->n, A->val[j], X->entries[tmp], 1, Y->entries[i], 1);
         }
     }
 }
