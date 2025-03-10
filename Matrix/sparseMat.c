@@ -715,7 +715,7 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
     memset(Y->entries[0], 0,
            Y->m * Y->n * sizeof(double));
 
-
+    MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
     //Local comp will be here
     int vertice;
     for (i = A->proc_map[world_rank]; i < A->proc_map[world_rank + 1]; i++) {
@@ -728,7 +728,7 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
             cblas_daxpy(Y->n, A->val_c[j], X->entries[buffMap[j]], 1, Y->entries[target_node], 1);
         }
     }
-    MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
+
     //MPI_Waitall(msgSendCount, request_send, MPI_STATUS_IGNORE);
     //Computation and communication
     //MPI_Status status;
@@ -1241,9 +1241,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
     for (i = 0; i < comm->reducer.nlcl_count; i++) {
         idx = comm->reducer.reduce_nonlocal[i];
         vtx = comm->reducer.reduce_list_mapped[idx];
-        for (k = 0; k < Y->n; k++) {
-            X->entries[vtx][k] = 0;
-        }
+        memset(X->entries[vtx], 0, sizeof(double) * X->n);
         for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
             tmp = comm->reducer.reduce_source_mapped[idx][j];
             factor = comm->reducer.reduce_source_factors[idx][j - 1];
