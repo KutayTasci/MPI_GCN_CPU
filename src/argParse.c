@@ -10,6 +10,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <time.h>
+#include <unistd.h>
 
 #define printf_r0(...) if (world_rank == 0) printf(__VA_ARGS__)
 
@@ -55,12 +56,7 @@ void exit_safe() {
 }
 
 bool checkPathExists(const char *path) {
-    FILE *file = fopen(path, "r");
-    if (file) {
-        fclose(file);
-        return true;
-    }
-    return false;
+    return access(path, F_OK) != -1;
 }
 
 args parseArgs(int argc, char **argv) {
@@ -72,7 +68,7 @@ args parseArgs(int argc, char **argv) {
     if (argc < 6 || strcmp(argv[1], "-h") == 0) {
         printf_r0("%s", usage);
         printf_r0("inpart_path, inpart_transpose_path: must contain inpart and inpart.bin files\n");
-        printf_r0("dataset_folder: must contain features.csv and labels.csv\n");
+        printf_r0("dataset_folder: must contain features.csv/.bin and labels.csv/.bin\n");
         exit_safe();
     }
     // set inpart and adj file
@@ -194,7 +190,7 @@ args parseArgs(int argc, char **argv) {
                         "TP"};
     printf_r0("Experimental settings\n");
     printf_r0("Dataset: %s\n", argv[1]);
-    printf_r0("Processor Count:%d - Hidden_Parameter:%d\n", world_size, ret.hidden_size);
+    printf_r0("Processor Count: %d - Hidden Parameters: %d\n", world_size, ret.hidden_size);
     printf_r0("Aggregation Mode: %s\n", agg_info[ret.comm_type]);
     printf_r0("--------------\n");
     return ret;
