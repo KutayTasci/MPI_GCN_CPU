@@ -703,12 +703,12 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask, d
                 memset(bufferS->data[base + j], 0, sizeof(double) * bufferR->feature_size);
             }
         }
-        MPI_Send(&(bufferS->data[base][0]),
-                 range * bufferS->feature_size,
-                 MPI_DOUBLE,
-                 k,
-                 AGG_COMM + world_rank,
-                 MPI_COMM_WORLD);
+        MPI_Rsend(&(bufferS->data[base][0]),
+                  range * bufferS->feature_size,
+                  MPI_DOUBLE,
+                  k,
+                  AGG_COMM + world_rank,
+                  MPI_COMM_WORLD);
 //                 &request_send[i]);
     }
     MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
@@ -1239,14 +1239,16 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask, double *
                  MPI_COMM_WORLD);
 //                 &comm->send_ls_p1[i]);
     }
+    for (i = 0; i < comm->reducer.nlcl_count; i++) {
+        idx = comm->reducer.reduce_nonlocal[i];
+        vtx = comm->reducer.reduce_list_mapped[idx];
+        memset(X->entries[vtx], 0, sizeof(double) * X->n);
+    }
     MPI_Waitall(comm->msgRecvCount_p1, comm->recv_ls_p1, MPI_STATUSES_IGNORE);
     double p1_end = MPI_Wtime();
     for (i = 0; i < comm->reducer.nlcl_count; i++) {
         idx = comm->reducer.reduce_nonlocal[i];
         vtx = comm->reducer.reduce_list_mapped[idx];
-        for (k = 0; k < Y->n; k++) {
-            X->entries[vtx][k] = 0;
-        }
         for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
             tmp = comm->reducer.reduce_source_mapped[idx][j];
             factor = comm->reducer.reduce_source_factors[idx][j - 1];
