@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
         metrics(soft, Y->mat, masks[TEST_IDX]);
         matrix_free(soft);
     }
-    MPI_Reduce(comm_times, comm_times, arg.n_epochs, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(comm_times, MPI_IN_PLACE, arg.n_epochs, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (world_rank == 0) {
         double tot = 0, min = 9999999;
         for (int i = 0; i < arg.n_epochs; i++) {
