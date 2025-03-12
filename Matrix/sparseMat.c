@@ -670,7 +670,7 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask, d
     //Fill send table
     int ind, ind_c;
 
-    MPI_Request *request_send = (MPI_Request *) malloc((msgSendCount) * sizeof(MPI_Request));
+//    MPI_Request *request_send = (MPI_Request *) malloc((msgSendCount) * sizeof(MPI_Request));
     MPI_Request *request_recv = (MPI_Request *) malloc((msgRecvCount) * sizeof(MPI_Request));
     //MPI_Status* status_list_r = (MPI_Status*) malloc((msgRecvCount) * sizeof(MPI_Status));
     //MPI_Status* status_list_s = (MPI_Status*) malloc((msgSendCount) * sizeof(MPI_Status));
