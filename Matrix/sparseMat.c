@@ -703,13 +703,13 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask, d
                 memset(bufferS->data[base + j], 0, sizeof(double) * bufferR->feature_size);
             }
         }
-        MPI_Issend(&(bufferS->data[base][0]),
-                   range * bufferS->feature_size,
-                   MPI_DOUBLE,
-                   k,
-                   AGG_COMM + world_rank,
-                   MPI_COMM_WORLD,
-                   &request_send[i]);
+        MPI_Isend(&(bufferS->data[base][0]),
+                  range * bufferS->feature_size,
+                  MPI_DOUBLE,
+                  k,
+                  AGG_COMM + world_rank,
+                  MPI_COMM_WORLD,
+                  &request_send[i]);
     }
     MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
     double end = MPI_Wtime();
