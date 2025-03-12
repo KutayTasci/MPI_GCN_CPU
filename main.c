@@ -77,11 +77,12 @@ int main(int argc, char **argv) {
     output = net_forward(net, X, TRAIN_IDX);
 
     double times[arg.n_epochs];
+    double comm_times[arg.n_epochs];
     for (int i = 0; i < arg.n_epochs; i++) {
         Matrix *tempErr = matrix_create(Y->mat->m, Y->gn, X->mat->total_m - X->mat->m);
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
-
+        net->time = 0;
         output = net_forward(net, X, TRAIN_IDX);
         Matrix *soft = matrix_softmax(output->mat);
         matrix_de_crossEntropy(soft, Y->mat, tempErr, masks[TRAIN_IDX]);
@@ -90,14 +91,16 @@ int main(int argc, char **argv) {
         net_backward(net, tempErr, 0.001, i);
         MPI_Barrier(MPI_COMM_WORLD);
         t2 = MPI_Wtime();
-        matrix_free(soft);
         times[i] = t2 - t1;
+        comm_times[i] = net->time;
+        matrix_free(soft);
         // test
         output = net_forward(net, X, TEST_IDX);
         soft = matrix_softmax(output->mat);
         metrics(soft, Y->mat, masks[TEST_IDX]);
         matrix_free(soft);
     }
+    MPI_Reduce(comm_times, comm_times, arg.n_epochs, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (world_rank == 0) {
         double tot = 0, min = 9999999;
         for (int i = 0; i < arg.n_epochs; i++) {
@@ -106,6 +109,12 @@ int main(int argc, char **argv) {
         }
         printf("Average runtime for current experiment=> %lf\n", tot / arg.n_epochs);
         printf("Min runtime for current experiment=> %lf\n", min);
+        min = 9999999;
+        for (int i = 0; i < arg.n_epochs; i++) {
+            if (comm_times[i] < min) min = comm_times[i];
+        }
+        printf("Min comm time for current experiment=> %lf\n", min);
+
         printf("---------------------------------------------\n");
         for (int i = 0; i < arg.n_epochs - 1; i++) {
             printf("%lf,", times[i]);

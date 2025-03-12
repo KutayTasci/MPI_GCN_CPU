@@ -23,6 +23,7 @@ typedef struct {
     int layer_capacity;
     double lr;
     bool *mask; // train, eval masks
+    double time;
 } neural_net;
 
 neural_net *net_init(int capacity);

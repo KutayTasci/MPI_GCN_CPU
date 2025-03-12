@@ -56,7 +56,7 @@ ParMatrix *net_forward(neural_net *net, ParMatrix *input, int mask_type) {
             activation_forward(activation_layer);
         } else if (net->layers[i]->type == GCN) {
             gcnLayer *gcn_layer = (gcnLayer *) net->layers[i]->layer;
-            gcn_forward(gcn_layer, mask_type);
+            gcn_forward(gcn_layer, mask_type, &net->time);
         } else if (net->layers[i]->type == DROPOUT) {
             dropoutLayer *dropout_layer = (dropoutLayer *) net->layers[i]->layer;
             dropout_forward(dropout_layer, mask_type);
@@ -85,7 +85,7 @@ void net_backward(neural_net *net, Matrix *error, double lr, int t) {
         if (net->layers[i]->type == GCN) {
             gcnLayer *gcn_layer = (gcnLayer *) net->layers[i]->layer;
             tmp = error;
-            error = gcn_backward(gcn_layer, error);
+            error = gcn_backward(gcn_layer, error, &net->time);
             matrix_free(tmp);
             gcn_step(gcn_layer, lr, t);
         } else if (net->layers[i]->type == ACTIVATION) {

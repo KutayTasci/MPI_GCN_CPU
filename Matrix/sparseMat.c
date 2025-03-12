@@ -636,7 +636,7 @@ void aggregate_cco(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
 
 }
 
-void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
+void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask, double *time) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
@@ -674,7 +674,7 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
     MPI_Request *request_recv = (MPI_Request *) malloc((msgRecvCount) * sizeof(MPI_Request));
     //MPI_Status* status_list_r = (MPI_Status*) malloc((msgRecvCount) * sizeof(MPI_Status));
     //MPI_Status* status_list_s = (MPI_Status*) malloc((msgSendCount) * sizeof(MPI_Status));
-
+    double start = MPI_Wtime();
     for (i = 0; i < msgRecvCount; i++) {
         k = bufferR->list[i];
         range = bufferR->pid_map[k + 1] - bufferR->pid_map[k];
@@ -711,6 +711,9 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
                   MPI_COMM_WORLD);
         //&(request_send[i]));
     }
+    MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
+    double end = MPI_Wtime();
+    *time += end - start;
     memset(Y->entries[0], 0,
            Y->m * Y->n * sizeof(double));
 
@@ -726,7 +729,7 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask) {
             }
         }
     }
-    MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
+
     //MPI_Waitall(msgSendCount, request_send, MPI_STATUS_IGNORE);
     //Computation and communication
     //MPI_Status status;
@@ -1185,7 +1188,7 @@ void aggregate_no_comm(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
 }
 
 
-void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
+void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask, double *time) {
     int world_size, world_rank;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
@@ -1215,6 +1218,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
             }
         }
     }
+    double p1_start = MPI_Wtime();
     for (i = 0; i < comm->msgSendCount_p1; i++) {
         part = comm->send_proc_list_p1[i];
         range = comm->sendBuffer_p1.proc_map[part + 1] - comm->sendBuffer_p1.proc_map[part];
@@ -1236,6 +1240,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
         //&(Comm->send_ls_p2[i]));
     }
     MPI_Waitall(comm->msgRecvCount_p1, comm->recv_ls_p1, MPI_STATUSES_IGNORE);
+    double p1_end = MPI_Wtime();
     for (i = 0; i < comm->reducer.nlcl_count; i++) {
         idx = comm->reducer.reduce_nonlocal[i];
         vtx = comm->reducer.reduce_list_mapped[idx];
@@ -1252,6 +1257,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
             }
         }
     }
+    double p2_start = MPI_Wtime();
     for (i = 0; i < comm->msgSendCount_p2; i++) {
         part = comm->send_proc_list_p2[i];
         range = comm->sendBuffer_p2.proc_map[part + 1] - comm->sendBuffer_p2.proc_map[part];
@@ -1273,8 +1279,10 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
                   MPI_COMM_WORLD);
         //&(Comm->send_ls_p2[i]));
     }
-    memset(Y->entries[0], 0, Y->m * Y->n * sizeof(double));
     MPI_Waitall(comm->msgRecvCount_p2, comm->recv_ls_p2, MPI_STATUSES_IGNORE);
+    double p2_end = MPI_Wtime();
+
+    memset(Y->entries[0], 0, Y->m * Y->n * sizeof(double));
     SparseMat *A = comm->A;
     // aggregate (sum) all the received data
     for (i = 0; i < A->m; i++) {
@@ -1285,4 +1293,5 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
             }
         }
     }
+    *time += p1_end - p1_start + p2_end - p2_start;
 }

@@ -30,9 +30,9 @@ gcnLayer *gcn_init(SparseMat *adj, void *comm, CommType comm_type, int size_f, i
 
 void setMode(int i);
 
-void gcn_forward(gcnLayer *layer, int eval);
+void gcn_forward(gcnLayer *layer, int eval, double *time);
 
-Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error);
+Matrix *gcn_backward(gcnLayer *layer, Matrix *out_error, double *time);
 
 void gcn_step(gcnLayer *layer, double lr, int t);
 
