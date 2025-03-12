@@ -100,7 +100,8 @@ int main(int argc, char **argv) {
         metrics(soft, Y->mat, masks[TEST_IDX]);
         matrix_free(soft);
     }
-    MPI_Reduce(comm_times, MPI_IN_PLACE, arg.n_epochs, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    double agg_comm_times[arg.n_epochs];
+    MPI_Reduce(comm_times, agg_comm_times, arg.n_epochs, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (world_rank == 0) {
         double tot = 0, min = 9999999;
         for (int i = 0; i < arg.n_epochs; i++) {
@@ -111,7 +112,7 @@ int main(int argc, char **argv) {
         printf("Min runtime for current experiment=> %lf\n", min);
         min = 9999999;
         for (int i = 0; i < arg.n_epochs; i++) {
-            if (comm_times[i] < min) min = comm_times[i];
+            if (agg_comm_times[i] < min) min = agg_comm_times[i];
         }
         printf("Min comm time for current experiment=> %lf\n", min);
 
