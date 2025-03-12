@@ -516,9 +516,6 @@ void map_comm_tp(TP_Comm *Comm, Matrix *B) {
         part = Comm->recv_proc_list_p1[i];
         range = Comm->recvBuffer_p1.proc_map[part + 1] - Comm->recvBuffer_p1.proc_map[part];
         base = B->m + Comm->recvBuffer_p1.proc_map[part] + Comm->reducer.reduce_count;
-        if (base + range > B->total_m) {
-            printf("yo error!!\n");
-        }
         MPI_Recv_init(&(B->entries[base][0]),
                       range * B->n,
                       MPI_DOUBLE,
@@ -533,9 +530,6 @@ void map_comm_tp(TP_Comm *Comm, Matrix *B) {
         part = Comm->recv_proc_list_p2[i];
         range = Comm->recvBuffer_p2.proc_map[part + 1] - Comm->recvBuffer_p2.proc_map[part];
         base = B->m + Comm->recvBuffer_p1.count + Comm->recvBuffer_p2.proc_map[part] + Comm->reducer.reduce_count;
-        if (base + range > B->total_m) {
-            printf("yo error!!\n");
-        }
         MPI_Recv_init(&(B->entries[base][0]),
                       range * B->n,
                       MPI_DOUBLE,

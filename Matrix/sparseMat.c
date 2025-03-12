@@ -670,7 +670,7 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask, d
     //Fill send table
     int ind, ind_c;
 
-    //MPI_Request* request_send = (MPI_Request*) malloc((msgSendCount) * sizeof(MPI_Request));
+    MPI_Request *request_send = (MPI_Request *) malloc((msgSendCount) * sizeof(MPI_Request));
     MPI_Request *request_recv = (MPI_Request *) malloc((msgRecvCount) * sizeof(MPI_Request));
     //MPI_Status* status_list_r = (MPI_Status*) malloc((msgRecvCount) * sizeof(MPI_Status));
     //MPI_Status* status_list_s = (MPI_Status*) malloc((msgSendCount) * sizeof(MPI_Status));
@@ -703,13 +703,13 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask, d
                 memset(bufferS->data[base + j], 0, sizeof(double) * bufferR->feature_size);
             }
         }
-        MPI_Rsend(&(bufferS->data[base][0]),
-                  range * bufferS->feature_size,
-                  MPI_DOUBLE,
-                  k,
-                  AGG_COMM + world_rank,
-                  MPI_COMM_WORLD);
-        //&(request_send[i]));
+        MPI_Issend(&(bufferS->data[base][0]),
+                   range * bufferS->feature_size,
+                   MPI_DOUBLE,
+                   k,
+                   AGG_COMM + world_rank,
+                   MPI_COMM_WORLD,
+                   &request_send[i]);
     }
     MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
     double end = MPI_Wtime();
@@ -1231,13 +1231,13 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask, double *
             else
                 memset(comm->sendBuffer_p1.buffer[base + j], 0, sizeof(double) * X->n);
         }
-        MPI_Rsend(&(comm->sendBuffer_p1.buffer[base][0]),
+        MPI_Isend(&(comm->sendBuffer_p1.buffer[base][0]),
                   range * X->n,
                   MPI_DOUBLE,
                   part,
                   0,
-                  MPI_COMM_WORLD);
-        //&(Comm->send_ls_p2[i]));
+                  MPI_COMM_WORLD,
+                  &comm->send_ls_p1[i]);
     }
     MPI_Waitall(comm->msgRecvCount_p1, comm->recv_ls_p1, MPI_STATUSES_IGNORE);
     double p1_end = MPI_Wtime();
@@ -1271,13 +1271,13 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask, double *
             else
                 memset(comm->sendBuffer_p2.buffer[base + j], 0, sizeof(double) * X->n);
         }
-        MPI_Rsend(&(comm->sendBuffer_p2.buffer[base][0]),
+        MPI_Isend(&(comm->sendBuffer_p2.buffer[base][0]),
                   range * X->n,
                   MPI_DOUBLE,
                   part,
                   1,
-                  MPI_COMM_WORLD);
-        //&(Comm->send_ls_p2[i]));
+                  MPI_COMM_WORLD,
+                  &(comm->send_ls_p2[i]));
     }
     MPI_Waitall(comm->msgRecvCount_p2, comm->recv_ls_p2, MPI_STATUSES_IGNORE);
     double p2_end = MPI_Wtime();
