@@ -727,8 +727,6 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask, d
         }
     }
     MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
-    double end = MPI_Wtime();
-    *time += end - start;
 
     //MPI_Waitall(msgSendCount, request_send, MPI_STATUS_IGNORE);
     //Computation and communication
@@ -747,6 +745,8 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask, d
             }
         }
     }
+    double end = MPI_Wtime();
+    *time += end - start;
 }
 
 void aggregate_cco_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step) {
@@ -1281,10 +1281,8 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask, double *
                  MPI_COMM_WORLD);
 //                 &(comm->send_ls_p2[i]));
     }
-    MPI_Waitall(comm->msgRecvCount_p2, comm->recv_ls_p2, MPI_STATUSES_IGNORE);
-    double p2_end = MPI_Wtime();
-
     memset(Y->entries[0], 0, Y->m * Y->n * sizeof(double));
+    MPI_Waitall(comm->msgRecvCount_p2, comm->recv_ls_p2, MPI_STATUSES_IGNORE);
     SparseMat *A = comm->A;
     // aggregate (sum) all the received data
     for (i = 0; i < A->m; i++) {
@@ -1295,5 +1293,6 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask, double *
             }
         }
     }
+    double p2_end = MPI_Wtime();
     *time += (p1_end - p1_start) + (p2_end - p2_start);
 }
