@@ -711,9 +711,6 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask, d
                   MPI_COMM_WORLD);
 //                 &request_send[i]);
     }
-    MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
-    double end = MPI_Wtime();
-    *time += end - start;
     memset(Y->entries[0], 0,
            Y->m * Y->n * sizeof(double));
 
@@ -729,6 +726,9 @@ void aggregate_csc(OPComm *opComm, Matrix *X, Matrix *Y, int step, bool *mask, d
             }
         }
     }
+    MPI_Waitall(msgRecvCount, request_recv, MPI_STATUS_IGNORE);
+    double end = MPI_Wtime();
+    *time += end - start;
 
     //MPI_Waitall(msgSendCount, request_send, MPI_STATUS_IGNORE);
     //Computation and communication
