@@ -1201,10 +1201,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
     for (i = 0; i < comm->reducer.lcl_count; i++) {
         idx = comm->reducer.reduce_local[i];
         vtx = comm->reducer.reduce_list_mapped[idx];
-        //This loop can be handled outside of spmm
-        for (k = 0; k < Y->n; k++) {
-            X->entries[vtx][k] = 0;
-        }
+        memset(X->entries[vtx], 0, Y->n * sizeof(double));
         for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
             tmp = comm->reducer.reduce_source_mapped[idx][j];
             factor = comm->reducer.reduce_source_factors[idx][j - 1];
@@ -1239,9 +1236,7 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask) {
     for (i = 0; i < comm->reducer.nlcl_count; i++) {
         idx = comm->reducer.reduce_nonlocal[i];
         vtx = comm->reducer.reduce_list_mapped[idx];
-        for (k = 0; k < Y->n; k++) {
-            X->entries[vtx][k] = 0;
-        }
+        memset(X->entries[vtx], 0, Y->n * sizeof(double));
         for (j = 1; j <= comm->reducer.reduce_source_mapped[idx][0]; j++) {
             tmp = comm->reducer.reduce_source_mapped[idx][j];
             factor = comm->reducer.reduce_source_factors[idx][j - 1];
