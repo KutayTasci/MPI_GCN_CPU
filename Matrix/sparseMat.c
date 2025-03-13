@@ -1295,5 +1295,5 @@ void aggregate_tp(TPW *tpw, Matrix *X, Matrix *Y, int step, bool *mask, double *
             }
         }
     }
-    *time += p1_end - p1_start + p2_end - p2_start;
+    *time += (p1_end - p1_start) + (p2_end - p2_start);
 }
